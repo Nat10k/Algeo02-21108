@@ -4,7 +4,8 @@ import glob
 
 # Akses folder training dataset
 # folder_dir = 'D:\OneDrive - Institut Teknologi Bandung\Folder Kuliah\Sem 3\Aljabar Linier dan Geometri\Tubes\Tubes 2\lfw-funneled\Angelina_Jolie'
-folder_dir = r"C:\Users\linal\OneDrive - Institut Teknologi Bandung\Folder Kuliah\Sem 3\Aljabar Linier dan Geometri\Tubes\Tubes 2\lfw-funneled\Angelina_Jolie"
+# folder_dir = r"C:\Users\linal\OneDrive - Institut Teknologi Bandung\Folder Kuliah\Sem 3\Aljabar Linier dan Geometri\Tubes\Tubes 2\lfw-funneled\Angelina_Jolie"
+folder_dir = r"..\Tubes2Algeo\Angelina_Jolie"
 imgMatrix = []
 avgVector = []
 length = 0
@@ -51,6 +52,3 @@ cv2.imshow("average",avgImage)
 for data in imgMatrix :
     for i in range(len(avgVector)) :
         data[i] -= avgVector[i]
-    
-    
-
