@@ -1,29 +1,6 @@
-import cv2
 import numpy as np
-import os
-import splitfolders
-import glob
 import math
 import scipy
-
-def vectorToImg(v, row,col) :
-    # Mengubah vektor v menjadi grid pixel gambar berukuran row x col
-    # KAMUS LOKAL
-    # i,j,ctr : integer
-    # imgGrid, img : array of array of int
-    # gridRow : array of int
-
-    # ALGORITMA
-    img = np.asarray(v.reshape(row,col), dtype=np.uint8)
-    return img
-
-def split_test_train(inputDir, outputDir,x) :
-    # Membagi file di inputDir menjadi training dan testing dataset dan memasukkannya ke folder outputDir
-    # KAMUS LOKAL
-
-    # ALGORITMA
-    splitfolders.ratio(inputDir, output=outputDir, seed=1337, ratio = (x, 1-x))
-    return 
 
 def vectorLength(v) :
     # Menghitung panjang vektor v
@@ -105,12 +82,14 @@ def QR_EigValue(mtrx, iteration=100000) :
     
     # ALGORITMA
     n = len(mtrx)
-    mK = scipy.linalg.hessenberg(mtrx) # sementara pake fungsi hessenberg built in (perlu implementasi sendiri)
+    mK = np.copy(mtrx)
     mKPrev = np.copy(mK)
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
-        Q,R = QRDecomp(mK)
-        mK = R @ Q
+        s = mK[n-1][n-1]
+        smult = np.eye(n) * s
+        Q,R = QRDecomp(np.subtract(mK,smult))
+        mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
         if (i % 1000 == 0) :
             print("Iterasi", i+1)
@@ -119,64 +98,8 @@ def QR_EigValue(mtrx, iteration=100000) :
         mKPrev = np.copy(mK)
     return np.diag(mK), QTdotQ
 
-# PROGRAM UTAMA
-# KAMUS
-# imgVectorMatrix, imgList : array of array of int
-
-# Bagi gambar menjadi training dan test dataset
-data_dir = "./Reduced face dataset"
-split_test_train(data_dir, "split data", 0.8)
-output_dir = "./split data"
-# folder_dir = r"C:\Users\linal\OneDrive - Institut Teknologi Bandung\Folder Kuliah\Sem 3\Aljabar Linier dan Geometri\Tubes\Tubes 2\lfw-funneled\Angelina_Jolie"
-imgVectorMatrix = []
-avgVector = []
-length = 0
-
-# Wajah rata-rata dan bagi set training serta testing
-trainingImage = np.array( [np.array(cv2.imread(image,0)) for image in glob.glob(f'{output_dir}/train/*/*')])
-testImage = [cv2.imread(image,0) for image in glob.glob(f'{output_dir}/val/*/*')]
-
-rows,cols = trainingImage[0].shape
-
-for images in trainingImage :
-    # List penampung nilai pixel
-    imgPixelList = images.flatten()
-    if (length == 0) :
-        avgVector = imgPixelList.astype('int')
-    else :
-        avgVector += imgPixelList          
-    imgVectorMatrix.append(imgPixelList)
-    length += 1
-
-for i in range(len(avgVector)) :
-    avgVector[i] //= length
-avgVector = np.asarray(avgVector, dtype=np.uint8)
-# print(vectorToImg(avgVector,rows,cols))
-
-# Munculin mean face
-# cv2.imshow("average face",vectorToImg(avgVector,rows,cols))
-# cv2.waitKey(0) 
-
-for i in range (len(imgVectorMatrix)) :
-    imgVectorMatrix[i] -= avgVector
-
-# print(imgVectorMatrix)
-# i = 1
-
-# Munculin norm face
-# for imgData in imgVectorMatrix :
-#     filename = "./norm face test/normFace"+str(i)+".jpg"
-#     cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
-#     i += 1
-
-# Matrix covariance
-mImgTrans = np.transpose(imgVectorMatrix)
-covar = np.dot(imgVectorMatrix, mImgTrans)
-print(covar)
-
-eigValue, QQ = QR_EigValue(covar)
-print("Nilai eigen algo sendiri")
-print(eigValue)
-eigValueBuiltIn = np.linalg.eigvals(covar)
-print("Nilai eigen algo built in")
-print(eigValueBuiltIn)
+test = np.random.randint(0, 255, (5,5))
+M, QQ = QR_EigValue(test)
+print(M)
+print(QQ)
+print(np.linalg.eigvals(test))
