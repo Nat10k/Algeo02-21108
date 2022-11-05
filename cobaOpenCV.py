@@ -6,6 +6,7 @@ import glob
 import math
 import scipy
 
+# Prosedur Tambahan
 def vectorToImg(v, row,col) :
     # Mengubah vektor v menjadi grid pixel gambar berukuran row x col
     # KAMUS LOKAL
@@ -123,6 +124,8 @@ def QR_EigValue(mtrx, iteration=100000) :
 # KAMUS
 # imgVectorMatrix, imgList : array of array of int
 
+# ALGORITMA
+# 0. Inisialisasi
 # Bagi gambar menjadi training dan test dataset
 data_dir = "./Reduced face dataset"
 split_test_train(data_dir, "split data", 0.8)
@@ -132,6 +135,8 @@ imgVectorMatrix = []
 avgVector = []
 length = 0
 
+# 1. Mengambil data wajah dari dataset
+# Konversi ke grayscale dan menjadikannya matriks
 # Wajah rata-rata dan bagi set training serta testing
 trainingImage = np.array( [np.array(cv2.imread(image,0)) for image in glob.glob(f'{output_dir}/train/*/*')])
 testImage = [cv2.imread(image,0) for image in glob.glob(f'{output_dir}/val/*/*')]
@@ -148,15 +153,17 @@ for images in trainingImage :
     imgVectorMatrix.append(imgPixelList)
     length += 1
 
+# 2. Mengambil nilai tengah wajah
 for i in range(len(avgVector)) :
     avgVector[i] //= length
 avgVector = np.asarray(avgVector, dtype=np.uint8)
 # print(vectorToImg(avgVector,rows,cols))
 
 # Munculin mean face
-# cv2.imshow("average face",vectorToImg(avgVector,rows,cols))
-# cv2.waitKey(0) 
+cv2.imshow("average face",vectorToImg(avgVector,rows,cols))
+cv2.waitKey(0) 
 
+# 3. Selisih training image dengan nilai tengah
 for i in range (len(imgVectorMatrix)) :
     imgVectorMatrix[i] -= avgVector
 
@@ -169,14 +176,17 @@ for i in range (len(imgVectorMatrix)) :
 #     cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
 #     i += 1
 
-# Matrix covariance
+# 4. Menghitung nilai covariance
 mImgTrans = np.transpose(imgVectorMatrix)
 covar = np.dot(imgVectorMatrix, mImgTrans)
 print(covar)
 
+# 5.a. Menghitung nilai eigen
 eigValue, QQ = QR_EigValue(covar)
 print("Nilai eigen algo sendiri")
 print(eigValue)
 eigValueBuiltIn = np.linalg.eigvals(covar)
 print("Nilai eigen algo built in")
 print(eigValueBuiltIn)
+
+# 5.b. Menghitung vektor eigen
