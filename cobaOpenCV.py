@@ -39,15 +39,28 @@ def vectorLength(v) :
     length = math.sqrt(length)
     return length
 
-def isLowerTriangular(mtrx) :
-    # Mengembalikan True jika mtrx adalah matriks segitiga bawah, False jika tidak
+def normalize(v) :
+    # Menghasilkan vektor hasil normalisasi dari vektor v
+    # KAMUS LOKAL
+    # vNorm : array of int
+    # vLength : int
+
+    # ALGORITMA
+    vLength = vectorLength(v)
+    vNorm = v
+    for i in range(len(vNorm)) :
+        vNorm[i] /= vLength 
+    return vNorm
+
+def isUpperTriangular(mtrx) :
+    # Mengembalikan True jika mtrx adalah matriks segitiga atas, False jika tidak
     # KAMUS LOKAL
     # i,j : integer
 
     # ALGORITMA 
     for i in range(1,len(mtrx)) :
         for j in range(i) :
-            if(abs(mtrx[i][j]) > 1e-10) :
+            if(abs(mtrx[i][j]) > 1e-3) :
                 return False
     return True
 
@@ -60,7 +73,7 @@ def isDiagSame(mtrx1, mtrx2) :
     if (len(mtrx1) != len(mtrx2)) :
         return False
     for i in range(len(mtrx1)) :
-        if (abs(mtrx1[i][i] - mtrx2[i][i]) > 1e-10) :
+        if (abs(mtrx1[i][i] - mtrx2[i][i]) > 1e-3) :
             return False
     return True
 
@@ -115,7 +128,7 @@ def QR_EigValue(mtrx, iteration=100000) :
         QTdotQ = QTdotQ @ Q
         if (i % 1000 == 0) :
             print("Iterasi", i+1)
-        if (isLowerTriangular(mK) and isDiagSame(mK, mKPrev)) :
+        if (isUpperTriangular(mK) and isDiagSame(mK, mKPrev)) :
             break
         mKPrev = np.copy(mK)
     return np.diag(mK), QTdotQ
@@ -127,8 +140,8 @@ def QR_EigValue(mtrx, iteration=100000) :
 # ALGORITMA
 # 0. Inisialisasi
 # Bagi gambar menjadi training dan test dataset
-data_dir = "./Reduced face dataset"
-split_test_train(data_dir, "split data", 0.8)
+# data_dir = "./Reduced face dataset"
+# split_test_train(data_dir, "split data", 0.8)
 output_dir = "./split data"
 # folder_dir = r"C:\Users\linal\OneDrive - Institut Teknologi Bandung\Folder Kuliah\Sem 3\Aljabar Linier dan Geometri\Tubes\Tubes 2\lfw-funneled\Angelina_Jolie"
 imgVectorMatrix = []
@@ -160,8 +173,8 @@ avgVector = np.asarray(avgVector, dtype=np.uint8)
 # print(vectorToImg(avgVector,rows,cols))
 
 # Munculin mean face
-cv2.imshow("average face",vectorToImg(avgVector,rows,cols))
-cv2.waitKey(0) 
+# cv2.imshow("average face",vectorToImg(avgVector,rows,cols))
+# cv2.waitKey(0) 
 
 # 3. Selisih training image dengan nilai tengah
 for i in range (len(imgVectorMatrix)) :
@@ -176,17 +189,84 @@ for i in range (len(imgVectorMatrix)) :
 #     cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
 #     i += 1
 
-# 4. Menghitung nilai covariance
+# 4. Menghitung matriks covariance
 mImgTrans = np.transpose(imgVectorMatrix)
 covar = np.dot(imgVectorMatrix, mImgTrans)
-print(covar)
 
-# 5.a. Menghitung nilai eigen
+# 5. Menghitung nilai eigen dan vektor eigen (ternyata matriks kovariansnya simetris, jadi eigenvectornya adalah QQ)
 eigValue, QQ = QR_EigValue(covar)
-print("Nilai eigen algo sendiri")
-print(eigValue)
-eigValueBuiltIn = np.linalg.eigvals(covar)
-print("Nilai eigen algo built in")
-print(eigValueBuiltIn)
 
-# 5.b. Menghitung vektor eigen
+# Urutkan nilai dan vektor eigen dari besar ke kecil
+eigSortIdx = eigValue.argsort() # argsort ngehasilin array yg isinya indeks elemen sesuai urutan. BLH ATAU GA ?
+sorted_eigVal = eigValue[eigSortIdx[:: -1]]
+sorted_eigVector = QQ[eigSortIdx[:: -1]]
+    
+# print("Nilai eigen algo sendiri")
+# print(eigValue)
+# print(QQ)
+# eigValueBuiltIn, eigVectorBuiltIn = np.linalg.eig(covar)
+# print("Nilai eigen algo built in")
+# print(eigValueBuiltIn)
+# print(eigVectorBuiltIn)
+
+# 6. Membuat eigenface
+eigenFace = np.transpose(np.dot(mImgTrans, sorted_eigVector))
+for i in range(len(eigenFace)) :
+    eigenFace[i] = normalize(eigenFace[i])
+
+# Bikin vektor koefisien tiap muka terhadap eigenFace
+coefTrain = []
+for i in range(len(imgVectorMatrix)) :
+    coefI = []
+    for j in range(len(eigenFace)) :
+        coefI.append(np.dot(imgVectorMatrix[i],eigenFace[j]))
+    coefTrain.append(coefI)
+
+# Munculin eigen face (harus tanpa normalisasi (?))
+# i = 1
+# for eigFace in eigenFace :
+#     filename = "./eigen face test/eigFace"+str(i)+".jpg"
+#     cv2.imwrite(filename,vectorToImg(eigFace,rows,cols))
+#     i += 1
+
+# 7. Test pengenalan wajah
+# Baca gambar uji
+testImg = cv2.imread('./testImg.jpg', 0).flatten()
+testImg -= avgVector
+# cv2.imshow('Norm test image', vectorToImg(testImg,rows,cols))
+# cv2.waitKey(0) 
+
+# Projeksi ke eigenface space
+coefTest = []
+for i in range(len(eigenFace)) :
+    coefTest.append(np.dot(testImg,eigenFace[i]))
+
+# Coba rekonstruksi wajah test dari eigen face
+# imgReconstruct = []
+# for i in range(len(eigenFace)) :
+#     if (i == 0) :
+#         imgReconstruct = np.dot(eigCoef[i],eigenFace[i])
+#     else :
+#         imgReconstruct +=   np.dot(eigCoef[i],eigenFace[i])
+# print(imgReconstruct)
+
+# cv2.imwrite('reconstruct.jpg', vectorToImg(imgReconstruct, rows, cols))
+
+# Cek pake Euclidean Distance
+idx = 0
+for i in range (len(coefTrain)) :
+    distance = 0
+    for j in range(len(coefTrain[i])) :
+        if (j == 0) :
+            distance = math.pow(coefTrain[i][j] - coefTest[j],2)
+        else :
+            distance += math.pow(coefTrain[i][j] - coefTest[j],2)
+    distance = math.sqrt(distance)
+    if (i == 0) :
+        min_dist = distance
+    else :
+        if (distance < min_dist) :
+            min_dist = distance
+            idx = i
+
+cv2.imwrite('closestImg.jpg', trainingImage[idx])

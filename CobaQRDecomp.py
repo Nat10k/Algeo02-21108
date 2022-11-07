@@ -15,15 +15,15 @@ def vectorLength(v) :
     length = math.sqrt(length)
     return length
 
-def isLowerTriangular(mtrx) :
-    # Mengembalikan True jika mtrx adalah matriks segitiga bawah, False jika tidak
+def isUpperTriangular(mtrx) :
+    # Mengembalikan True jika mtrx adalah matriks segitiga atas, False jika tidak
     # KAMUS LOKAL
     # i,j : integer
 
     # ALGORITMA 
     for i in range(1,len(mtrx)) :
         for j in range(i) :
-            if(abs(mtrx[i][j]) > 1e-10) :
+            if(abs(mtrx[i][j]) > 1e-3) :
                 return False
     return True
 
@@ -36,7 +36,7 @@ def isDiagSame(mtrx1, mtrx2) :
     if (len(mtrx1) != len(mtrx2)) :
         return False
     for i in range(len(mtrx1)) :
-        if (abs(mtrx1[i][i] - mtrx2[i][i]) > 1e-10) :
+        if (abs(mtrx1[i][i] - mtrx2[i][i]) > 1e-3) :
             return False
     return True
 
@@ -82,7 +82,7 @@ def QR_EigValue(mtrx, iteration=100000) :
     
     # ALGORITMA
     n = len(mtrx)
-    mK = np.copy(mtrx)
+    mK = scipy.linalg.hessenberg(mtrx) 
     mKPrev = np.copy(mK)
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
@@ -93,7 +93,7 @@ def QR_EigValue(mtrx, iteration=100000) :
         QTdotQ = QTdotQ @ Q
         if (i % 1000 == 0) :
             print("Iterasi", i+1)
-        if (isLowerTriangular(mK) and isDiagSame(mK, mKPrev)) :
+        if (isUpperTriangular(mK) and isDiagSame(mK, mKPrev)) :
             break
         mKPrev = np.copy(mK)
     return np.diag(mK), QTdotQ
