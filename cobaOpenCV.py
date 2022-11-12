@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
-import os
 import splitfolders
 import glob
 import math
 import scipy
+import time
 
 # Prosedur Tambahan
 def vectorToImg(v, row,col) :
@@ -79,36 +79,53 @@ def isDiagSame(mtrx1, mtrx2) :
 
 def QRDecomp(mtrx) :
     # Memberikan hasil dekomposisi QR dari matriks mtrx
+    # Sumber : https://www.codeproject.com/Articles/5319754/Can-QR-Decomposition-Be-Actually-Faster-Schwarz-Ru#mod_gs
     # KAMUS LOKAL
-    # i, j, dotProduct : integer
-    # transM, Q, R, QTrans : array of array of integer
+    # i,k : integer
+    # Q, R : array of array of integer
     # u : array of integer
+    
+    # ALGORITMA
+    Q = np.array(mtrx, dtype = np.float64)
+    R = np.zeros((mtrx.shape[0], mtrx.shape[0]), dtype=np.float64)
+    for k in range (len(R)) :
+        for i in range(k) :
+            R[i,k] = np.dot(Q[:,i], np.transpose(Q[:,k]))
+            Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
+        R[k,k] = vectorLength(Q[:,k])
+        Q[:,k] = Q[:,k] / R[k,k]
+    return -Q,-R
 
-    # ALGORITMA 
-    transM = np.transpose(mtrx)
-    QTrans = np.empty(transM.shape)
-    R = np.empty((transM.shape[1], transM.shape[1]))
-    u = np.empty(transM.shape[1])
-    for i in range(len(transM)) :
-        for j in range(len(transM[i])) :
-            u[j] = float(transM[i][j])
-        if (i > 0) :
-            for j in range(i) :
-                dotProduct = np.dot(u, QTrans[j])
-                for k in range(len(u)) :
-                    u[k] -= QTrans[j][k]* dotProduct
-        lengthU = vectorLength(u)
-        if (lengthU != 0) :
-            for j in range (len(u)) :
-                u[j] /= lengthU
-        QTrans[i] = u
-        for j in range (len(R[i])) :
-            if (j >= i) :
-                R[i][j] = np.dot(u,transM[j])
-            else :
-                R[i][j] = 0
-    Q = np.transpose(QTrans)
-    return (Q,R)
+    # KAMUS LOKAL LAMA
+    # i, j, dotProduct : integer
+    # transM, Q, R : array of array of integer
+    # u : array of integer
+    
+    # ALGORITMA LAMA
+    # transM = np.transpose(mtrx)
+    # QTrans = np.empty(transM.shape)
+    # R = np.empty((transM.shape[1], transM.shape[1]))
+    # u = np.empty(transM.shape[1])
+    # for i in range(len(transM)) :
+    #     for j in range(len(transM[i])) :
+    #         u[j] = float(transM[i][j])
+    #     if (i > 0) :
+    #         for j in range(i) :
+    #             dotProduct = np.dot(u, QTrans[j])
+    #             for k in range(len(u)) :
+    #                 u[k] -= QTrans[j][k]* dotProduct
+    #     lengthU = vectorLength(u)
+    #     if (lengthU != 0) :
+    #         for j in range (len(u)) :
+    #             u[j] /= lengthU
+    #     QTrans[i] = u
+    #     for j in range (len(R[i])) :
+    #         if (j >= i) :
+    #             R[i][j] = np.dot(u,transM[j])
+    #         else :
+    #             R[i][j] = 0
+    # Q = np.transpose(QTrans)
+    # return (Q,R)
 
 def QR_EigValue(mtrx, iteration=100000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
@@ -118,20 +135,44 @@ def QR_EigValue(mtrx, iteration=100000) :
     # i : integer
     
     # ALGORITMA
+    # Ditambahin cek waktu
+    startTime = time.time()
     n = len(mtrx)
-    mK = scipy.linalg.hessenberg(mtrx) # sementara pake fungsi hessenberg built in (perlu implementasi sendiri)
-    mKPrev = np.copy(mK)
+    mK = np.copy(mtrx)
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
-        Q,R = QRDecomp(mK)
-        mK = R @ Q
+        s = mK[n-1][n-1]
+        smult = np.eye(n) * s
+        Q,R = QRDecomp(np.subtract(mK,smult))
+        # startQR = time.time()
+        # Q,R = np.linalg.qr(np.subtract(mK,smult))
+        # endQR = time.time()
+        mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
         if (i % 1000 == 0) :
             print("Iterasi", i+1)
-        if (isUpperTriangular(mK) and isDiagSame(mK, mKPrev)) :
+        if (isUpperTriangular(mK)) :
             break
-        mKPrev = np.copy(mK)
+    # Waktu akhir
+    endTime = time.time()
+    print("Waktu eksekusi : ", endTime-startTime)
     return np.diag(mK), QTdotQ
+    # n = len(mtrx)
+    # mK = scipy.linalg.hessenberg(mtrx) 
+    # mKPrev = np.copy(mK)
+    # QTdotQ = np.eye(n) # Matriks identitas ukuran n
+    # for i in range(iteration) :
+    #     s = mK[n-1][n-1]
+    #     smult = np.eye(n) * s
+    #     Q,R = QRDecomp(np.subtract(mK,smult))
+    #     mK = np.add(R @ Q, smult)
+    #     QTdotQ = QTdotQ @ Q
+    #     if (i % 1000 == 0) :
+    #         print("Iterasi", i+1)
+    #     if (isUpperTriangular(mK) and isDiagSame(mK, mKPrev)) :
+    #         break
+    #     mKPrev = np.copy(mK)
+    # return np.diag(mK), QTdotQ
 
 # PROGRAM UTAMA
 # KAMUS
@@ -140,9 +181,15 @@ def QR_EigValue(mtrx, iteration=100000) :
 # ALGORITMA
 # 0. Inisialisasi
 # Bagi gambar menjadi training dan test dataset
-# data_dir = "./Reduced face dataset"
-# split_test_train(data_dir, "split data", 0.8)
+# Database awal
+data_dir = "./Reduced face dataset"
+split_test_train(data_dir, "split data", 0.8)
 output_dir = "./split data"
+
+# Database dengan image centered
+# data_dir = "./Reduced face dataset centered"
+# split_test_train(data_dir, "split data centered", 0.8)
+# output_dir = "./split data centered"
 # folder_dir = r"C:\Users\linal\OneDrive - Institut Teknologi Bandung\Folder Kuliah\Sem 3\Aljabar Linier dan Geometri\Tubes\Tubes 2\lfw-funneled\Angelina_Jolie"
 imgVectorMatrix = []
 avgVector = []
@@ -151,8 +198,9 @@ length = 0
 # 1. Mengambil data wajah dari dataset
 # Konversi ke grayscale dan menjadikannya matriks
 # Wajah rata-rata dan bagi set training serta testing
+initImage = np.array( [np.array(cv2.imread(image)) for image in glob.glob(f'{output_dir}/train/*/*')])
 trainingImage = np.array( [np.array(cv2.imread(image,0)) for image in glob.glob(f'{output_dir}/train/*/*')])
-testImage = [cv2.imread(image,0) for image in glob.glob(f'{output_dir}/val/*/*')]
+# testImage = [cv2.imread(image,0) for image in glob.glob(f'{output_dir}/val/*/*')]
 
 rows,cols = trainingImage[0].shape
 
@@ -194,12 +242,30 @@ mImgTrans = np.transpose(imgVectorMatrix)
 covar = np.dot(imgVectorMatrix, mImgTrans)
 
 # 5. Menghitung nilai eigen dan vektor eigen (ternyata matriks kovariansnya simetris, jadi eigenvectornya adalah QQ)
-eigValue, QQ = QR_EigValue(covar)
+eigValue, QQ = QR_EigValue(covar) # Eigen sendiri
+eigValueBuiltIn, eigVectorBuiltIn = np.linalg.eig(covar) # Eigen built in
 
 # Urutkan nilai dan vektor eigen dari besar ke kecil
-eigSortIdx = eigValue.argsort() # argsort ngehasilin array yg isinya indeks elemen sesuai urutan. BLH ATAU GA ?
+# Pake eigen built-in
+eigSortIdxBuiltIn = eigValueBuiltIn.argsort() # argsort ngehasilin array yg isinya indeks elemen sesuai urutan. BLH ATAU GA ?
+sorted_eigValBuiltIn = eigValueBuiltIn[eigSortIdxBuiltIn[:: -1]]
+sorted_eigVectBuiltIn = eigVectorBuiltIn[eigSortIdxBuiltIn[:: -1]]
+sorted_eigVectorBuiltIn = []
+for i in range(len(sorted_eigVectBuiltIn)//10) :
+    sorted_eigVectorBuiltIn.append(sorted_eigVectBuiltIn[i])
+# print(len(sorted_eigVector))
+sorted_eigVectorBuiltIn = np.array(sorted_eigVectorBuiltIn, dtype=np.float64).T
+
+# Eigen sendiri
+eigSortIdx = eigValue.argsort() # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
 sorted_eigVal = eigValue[eigSortIdx[:: -1]]
-sorted_eigVector = QQ[eigSortIdx[:: -1]]
+sort_eigVector = QQ[eigSortIdx[:: -1]]
+print(len(sort_eigVector))
+sorted_eigVector = []
+for i in range(len(sort_eigVector)//10) :
+    sorted_eigVector.append(sort_eigVector[i])
+# print(len(sorted_eigVector))
+sorted_eigVector = np.array(sorted_eigVector, dtype=np.float64).T
     
 # print("Nilai eigen algo sendiri")
 # print(eigValue)
@@ -211,16 +277,24 @@ sorted_eigVector = QQ[eigSortIdx[:: -1]]
 
 # 6. Membuat eigenface
 eigenFace = np.transpose(np.dot(mImgTrans, sorted_eigVector))
+eigenFaceBuiltIn = np.transpose(np.dot(mImgTrans, sorted_eigVectorBuiltIn))
 for i in range(len(eigenFace)) :
     eigenFace[i] = normalize(eigenFace[i])
 
 # Bikin vektor koefisien tiap muka terhadap eigenFace
 coefTrain = []
+coefTrainBuiltIn = []
 for i in range(len(imgVectorMatrix)) :
     coefI = []
     for j in range(len(eigenFace)) :
         coefI.append(np.dot(imgVectorMatrix[i],eigenFace[j]))
     coefTrain.append(coefI)
+
+for i in range(len(imgVectorMatrix)) :
+    coefI = []
+    for j in range(len(eigenFaceBuiltIn)) :
+        coefI.append(np.dot(imgVectorMatrix[i],eigenFaceBuiltIn[j]))
+    coefTrainBuiltIn.append(coefI)
 
 # Munculin eigen face (harus tanpa normalisasi (?))
 # i = 1
@@ -240,6 +314,10 @@ testImg -= avgVector
 coefTest = []
 for i in range(len(eigenFace)) :
     coefTest.append(np.dot(testImg,eigenFace[i]))
+
+coefTestBuiltIn = []
+for i in range(len(eigenFaceBuiltIn)) :
+    coefTestBuiltIn.append(np.dot(testImg,eigenFaceBuiltIn[i]))
 
 # Coba rekonstruksi wajah test dari eigen face
 # imgReconstruct = []
@@ -268,5 +346,23 @@ for i in range (len(coefTrain)) :
         if (distance < min_dist) :
             min_dist = distance
             idx = i
+print(min_dist)
+cv2.imwrite('closestImg.jpg', initImage[idx])
 
-cv2.imwrite('closestImg.jpg', trainingImage[idx])
+idx = 0
+for i in range (len(coefTrainBuiltIn)) :
+    distance = 0
+    for j in range(len(coefTrainBuiltIn[i])) :
+        if (j == 0) :
+            distance = math.pow(coefTrainBuiltIn[i][j] - coefTestBuiltIn[j],2)
+        else :
+            distance += math.pow(coefTrainBuiltIn[i][j] - coefTestBuiltIn[j],2)
+    distance = math.sqrt(distance)
+    if (i == 0) :
+        min_dist = distance
+    else :
+        if (distance < min_dist) :
+            min_dist = distance
+            idx = i
+print(min_dist)
+cv2.imwrite('closestImgBuiltIn.jpg', initImage[idx])
