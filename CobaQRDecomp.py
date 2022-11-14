@@ -350,19 +350,17 @@ def rayleigh_iteration(mtrx):
         if i > 0 :
             for k in range(len(eigVectors)) :
                 v -= np.dot(v,eigVectors[k]) * eigVectors[k]
-        v /= np.linalg.norm(v)**2
+        v /= np.linalg.norm(v)
         mu = np.dot(v, np.dot(mtrx, v))
         for t in range(max_iter):
-            if (n >= 70) :
-                sign, logDet = np.linalg.slogdet(mu * I - mtrx)
-                if (sign == 0) :
-                    break
+            sign, logdet = np.linalg.slogdet(mu * I - mtrx)
+            print(sign)
+            if (sign == 0) :
+                break
             else :
-                if (np.linalg.det(mu * I - mtrx) == 0) :
-                    break
-            v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
-            v /= np.linalg.norm(v)
-            mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
+                v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
+                v /= np.linalg.norm(v)
+                mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
         eigValues[i] = mu
         eigVectors.append(v)
     # for i in range(len(eigVectors)) :
@@ -373,8 +371,14 @@ def rayleigh_iteration(mtrx):
     return (eigValues, eigVectors.T)
 
 
-test = np.random.randint(0, 255, (5,5))
-test = np.dot(test, test.T)
+# test = np.random.randint(0, 255, (5,5))
+# test = np.dot(test, test.T)
+# print(test)
+test = np.array([[ 56823, 68023, 85245, 91181, 37667],
+ [ 68023, 8820, 10390, 105639, 48333],
+ [ 8524, 10390, 17685, 16714, 105370],
+ [ 9118, 10563, 16714, 182378, 92210],
+ [ 37667, 4833, 105370, 92210, 76076]])
 # print("Matriks awal")
 # print(test)
 # QSendiri, RSendiri = QRDecomp(test)
@@ -413,7 +417,6 @@ print(sorted_eigVectRayleigh)
 print("Built in")
 print(sorted_eigValBuiltIn)
 print(sorted_eigVectBuiltIn)
-
 # Pake power iteration (salah)
 # kLargestEigVector =[]
 # for i in range (len(test)//10) :

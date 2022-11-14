@@ -190,23 +190,19 @@ def rayleigh_iteration(mtrx):
         if i > 0 :
             for k in range(len(eigVectors)) :
                 v -= np.dot(v,eigVectors[k]) * eigVectors[k] # Cari vektor yang ortogonal dengan eigenvector sebelumnya
-        v /= np.linalg.norm(v)**2 # Normalisasi vektor
+        v /= np.linalg.norm(v) # Normalisasi vektor
         mu = np.dot(v, np.dot(mtrx, v))
         for t in range(max_iter):
-            if (n >= 70) :
-                sign, logDet = np.linalg.slogdet(mu * I - mtrx)
-                if (sign == 0) :
-                    break
+            sign, logdet = np.linalg.slogdet(mu * I - mtrx)
+            if (abs(np.exp(logdet)) <= 1e-7) :
+                print("break")
+                break
             else :
-                if (np.linalg.det(mu * I - mtrx) == 0) :
-                    break
-            v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
-            v /= np.linalg.norm(v)
-            mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
+                v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
+                v /= np.linalg.norm(v)
+                mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
         eigValues[i] = mu
         eigVectors.append(v)
-    # for i in range(len(eigVectors)) :
-    #     eigVectors[i] /= np.linalg.norm(eigVectors[i])
     eigVectors = np.array(eigVectors)
     return (eigValues, eigVectors.T)
 
@@ -240,6 +236,7 @@ trainingImage = np.array( [np.array(cv2.imread(image,0)) for image in glob.glob(
 # testImage = [cv2.imread(image,0) for image in glob.glob(f'{output_dir}/val/*/*')]
 
 rows,cols = trainingImage[0].shape
+print("Banyak gambar :", len(trainingImage))
 
 for images in trainingImage :
     # List penampung nilai pixel
@@ -292,6 +289,7 @@ for i in range(len(sorted_eigVectBuiltIn)//10) :
     sorted_eigVectorBuiltIn.append(sorted_eigVectBuiltIn[i])
 # print(len(sorted_eigVector))
 sorted_eigVectorBuiltIn = np.array(sorted_eigVectorBuiltIn, dtype=np.float64).T
+print(sorted_eigVectorBuiltIn)
 
 # Eigen sendiri
 eigSortIdx = eigValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
@@ -302,6 +300,7 @@ for i in range(len(sort_eigVector)//10) :
     sorted_eigVector.append(sort_eigVector[i])
 # print(len(sorted_eigVector))
 sorted_eigVector = np.array(sorted_eigVector, dtype=np.float64).T
+print(sorted_eigVector)
     
 # print("Nilai eigen algo sendiri")
 # print(eigValue)
