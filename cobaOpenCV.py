@@ -143,9 +143,9 @@ def QR_EigValue(mtrx, iteration=100000) :
     for i in range(iteration) :
         s = mK[n-1][n-1]
         smult = np.eye(n) * s
-        Q,R = QRDecomp(np.subtract(mK,smult))
+        # Q,R = QRDecomp(np.subtract(mK,smult))
         # startQR = time.time()
-        # Q,R = np.linalg.qr(np.subtract(mK,smult))
+        Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
         # endQR = time.time()
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
@@ -174,6 +174,45 @@ def QR_EigValue(mtrx, iteration=100000) :
     #     mKPrev = np.copy(mK)
     # return np.diag(mK), QTdotQ
 
+def rayleigh_iteration(mtrx):
+    # Menghitung eigenvector dan eigenvalue memakai rayleigh quotient
+    # Sumber : https://codereview.stackexchange.com/questions/229457/algorithm-that-generates-orthogonal-vectors-c-implementation (dapetin vektor ortogonal)
+    #          https://en.wikipedia.org/wiki/Rayleigh_quotient_iteration
+    startTime = time.time()
+    n = mtrx.shape[0]
+    max_iter = n
+    eigVectors = []
+    eigValues = np.empty(n)
+    I = np.eye(n)
+    v = np.random.randn(n) # Vektor tebakan acak
+    v /= np.linalg.norm(v)
+    for i in range(n) :
+        v = np.random.randn(n) # Vektor tebakan acak
+        if i > 0 :
+            for k in range(len(eigVectors)) :
+                v -= np.dot(v,eigVectors[k]) * eigVectors[k] # Cari vektor yang ortogonal dengan eigenvector sebelumnya
+        v /= np.linalg.norm(v)**2 # Normalisasi vektor
+        mu = np.dot(v, np.dot(mtrx, v))
+        for t in range(max_iter):
+            if (n >= 70) :
+                sign, logDet = np.linalg.slogdet(mu * I - mtrx)
+                if (sign == 0) :
+                    break
+            else :
+                if (np.linalg.det(mu * I - mtrx) == 0) :
+                    break
+            v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
+            v /= np.linalg.norm(v)
+            mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
+        eigValues[i] = mu
+        eigVectors.append(v)
+    # for i in range(len(eigVectors)) :
+    #     eigVectors[i] /= np.linalg.norm(eigVectors[i])
+    eigVectors = np.array(eigVectors)
+    endTime = time.time()
+    print("Waktu eksekusi Rayleigh Iteration :", endTime-startTime)
+    return (eigValues, eigVectors.T)
+
 # PROGRAM UTAMA
 # KAMUS
 # imgVectorMatrix, imgList : array of array of int
@@ -182,8 +221,8 @@ def QR_EigValue(mtrx, iteration=100000) :
 # 0. Inisialisasi
 # Bagi gambar menjadi training dan test dataset
 # Database awal
-data_dir = "./Reduced face dataset"
-split_test_train(data_dir, "split data", 0.8)
+# data_dir = "./Reduced face dataset"
+# split_test_train(data_dir, "split data", 0.8)
 output_dir = "./split data"
 
 # Database dengan image centered
@@ -232,24 +271,24 @@ for i in range (len(imgVectorMatrix)) :
 # i = 1
 
 # Munculin norm face
-# for imgData in imgVectorMatrix :
-#     filename = "./norm face test/normFace"+str(i)+".jpg"
-#     cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
-#     i += 1
+for imgData in imgVectorMatrix :
+    filename = "./norm face test/normFace"+str(i)+".jpg"
+    cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
+    i += 1
 
 # 4. Menghitung matriks covariance
 mImgTrans = np.transpose(imgVectorMatrix)
 covar = np.dot(imgVectorMatrix, mImgTrans)
 
 # 5. Menghitung nilai eigen dan vektor eigen (ternyata matriks kovariansnya simetris, jadi eigenvectornya adalah QQ)
-eigValue, QQ = QR_EigValue(covar) # Eigen sendiri
+eigValue, eigVector = rayleigh_iteration(covar) # Eigen sendiri
 eigValueBuiltIn, eigVectorBuiltIn = np.linalg.eig(covar) # Eigen built in
 
 # Urutkan nilai dan vektor eigen dari besar ke kecil
 # Pake eigen built-in
-eigSortIdxBuiltIn = eigValueBuiltIn.argsort() # argsort ngehasilin array yg isinya indeks elemen sesuai urutan. BLH ATAU GA ?
-sorted_eigValBuiltIn = eigValueBuiltIn[eigSortIdxBuiltIn[:: -1]]
-sorted_eigVectBuiltIn = eigVectorBuiltIn[eigSortIdxBuiltIn[:: -1]]
+eigSortIdxBuiltIn = eigValueBuiltIn.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan. BLH ATAU GA ?
+sorted_eigValBuiltIn = eigValueBuiltIn[eigSortIdxBuiltIn]
+sorted_eigVectBuiltIn = eigVectorBuiltIn[:,eigSortIdxBuiltIn]
 sorted_eigVectorBuiltIn = []
 for i in range(len(sorted_eigVectBuiltIn)//10) :
     sorted_eigVectorBuiltIn.append(sorted_eigVectBuiltIn[i])
@@ -257,10 +296,9 @@ for i in range(len(sorted_eigVectBuiltIn)//10) :
 sorted_eigVectorBuiltIn = np.array(sorted_eigVectorBuiltIn, dtype=np.float64).T
 
 # Eigen sendiri
-eigSortIdx = eigValue.argsort() # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-sorted_eigVal = eigValue[eigSortIdx[:: -1]]
-sort_eigVector = QQ[eigSortIdx[:: -1]]
-print(len(sort_eigVector))
+eigSortIdx = eigValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigVal = eigValue[eigSortIdx]
+sort_eigVector = eigVector[:,eigSortIdx]
 sorted_eigVector = []
 for i in range(len(sort_eigVector)//10) :
     sorted_eigVector.append(sort_eigVector[i])
@@ -279,7 +317,7 @@ sorted_eigVector = np.array(sorted_eigVector, dtype=np.float64).T
 eigenFace = np.transpose(np.dot(mImgTrans, sorted_eigVector))
 eigenFaceBuiltIn = np.transpose(np.dot(mImgTrans, sorted_eigVectorBuiltIn))
 for i in range(len(eigenFace)) :
-    eigenFace[i] = normalize(eigenFace[i])
+    eigenFace[i] /= np.linalg.norm(eigenFace[i])
 
 # Bikin vektor koefisien tiap muka terhadap eigenFace
 coefTrain = []
