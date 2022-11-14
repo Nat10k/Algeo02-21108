@@ -178,7 +178,6 @@ def rayleigh_iteration(mtrx):
     # Menghitung eigenvector dan eigenvalue memakai rayleigh quotient
     # Sumber : https://codereview.stackexchange.com/questions/229457/algorithm-that-generates-orthogonal-vectors-c-implementation (dapetin vektor ortogonal)
     #          https://en.wikipedia.org/wiki/Rayleigh_quotient_iteration
-    startTime = time.time()
     n = mtrx.shape[0]
     max_iter = n
     eigVectors = []
@@ -209,8 +208,6 @@ def rayleigh_iteration(mtrx):
     # for i in range(len(eigVectors)) :
     #     eigVectors[i] /= np.linalg.norm(eigVectors[i])
     eigVectors = np.array(eigVectors)
-    endTime = time.time()
-    print("Waktu eksekusi Rayleigh Iteration :", endTime-startTime)
     return (eigValues, eigVectors.T)
 
 # PROGRAM UTAMA
@@ -219,6 +216,7 @@ def rayleigh_iteration(mtrx):
 
 # ALGORITMA
 # 0. Inisialisasi
+startTime = time.time()
 # Bagi gambar menjadi training dan test dataset
 # Database awal
 # data_dir = "./Reduced face dataset"
@@ -404,3 +402,6 @@ for i in range (len(coefTrainBuiltIn)) :
             idx = i
 print(min_dist)
 cv2.imwrite('closestImgBuiltIn.jpg', initImage[idx])
+
+endTime = time.time()
+print("Waktu eksekusi :", endTime-startTime)
