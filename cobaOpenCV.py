@@ -5,6 +5,7 @@ import glob
 import math
 import scipy
 import time
+import sympy
 
 # Prosedur Tambahan
 def vectorToImg(v, row,col) :
@@ -193,14 +194,12 @@ def rayleigh_iteration(mtrx):
         v /= np.linalg.norm(v) # Normalisasi vektor
         mu = np.dot(v, np.dot(mtrx, v))
         for t in range(max_iter):
-            sign, logdet = np.linalg.slogdet(mu * I - mtrx)
-            if (abs(np.exp(logdet)) <= 1e-7) :
-                print("break")
-                break
-            else :
+            try :
                 v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
                 v /= np.linalg.norm(v)
                 mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
+            except :
+                break
         eigValues[i] = mu
         eigVectors.append(v)
     eigVectors = np.array(eigVectors)
@@ -215,8 +214,8 @@ def rayleigh_iteration(mtrx):
 startTime = time.time()
 # Bagi gambar menjadi training dan test dataset
 # Database awal
-# data_dir = "./Reduced face dataset"
-# split_test_train(data_dir, "split data", 0.8)
+data_dir = "./Reduced face dataset"
+split_test_train(data_dir, "split data", 0.8)
 output_dir = "./split data"
 
 # Database dengan image centered
@@ -289,7 +288,6 @@ for i in range(len(sorted_eigVectBuiltIn)//10) :
     sorted_eigVectorBuiltIn.append(sorted_eigVectBuiltIn[i])
 # print(len(sorted_eigVector))
 sorted_eigVectorBuiltIn = np.array(sorted_eigVectorBuiltIn, dtype=np.float64).T
-print(sorted_eigVectorBuiltIn)
 
 # Eigen sendiri
 eigSortIdx = eigValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
@@ -300,8 +298,17 @@ for i in range(len(sort_eigVector)//10) :
     sorted_eigVector.append(sort_eigVector[i])
 # print(len(sorted_eigVector))
 sorted_eigVector = np.array(sorted_eigVector, dtype=np.float64).T
-print(sorted_eigVector)
-    
+
+for i in range(len(sorted_eigVal)) :
+    if(abs(sorted_eigVal[i] - sorted_eigValBuiltIn[i]) > 1e-3) :
+        print("Eigenvalue beda jauh")
+
+for i in range(len(sorted_eigVector)) :
+    for j in range(len(sorted_eigVector[i])) :
+        if (abs(abs(sorted_eigVector[i][j]) - abs(sorted_eigVectorBuiltIn[i][j])) > 1e-3) :
+            print("Eigenvector beda jauh")
+            break
+
 # print("Nilai eigen algo sendiri")
 # print(eigValue)
 # print(QQ)
