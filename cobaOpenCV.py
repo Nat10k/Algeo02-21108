@@ -91,9 +91,9 @@ def QRDecomp(mtrx) :
     R = np.zeros((mtrx.shape[0], mtrx.shape[0]), dtype=np.float64)
     for k in range (len(R)) :
         for i in range(k) :
-            R[i,k] = np.dot(Q[:,i], np.transpose(Q[:,k]))
+            R[i,k] = np.dot(Q[:,i].T, Q[:,k])
             Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
-        R[k,k] = vectorLength(Q[:,k])
+        R[k,k] = np.linalg.norm(Q[:,k])
         Q[:,k] = Q[:,k] / R[k,k]
     return -Q,-R
 
@@ -128,9 +128,10 @@ def QRDecomp(mtrx) :
     # Q = np.transpose(QTrans)
     # return (Q,R)
 
-def QR_EigValue(mtrx, iteration=100000) :
+def QR_EigValue(mtrx, iteration=5000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
+    #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
     # KAMUS LOKAL 
     # n : integer
     # i : integer
@@ -139,14 +140,15 @@ def QR_EigValue(mtrx, iteration=100000) :
     # Ditambahin cek waktu
     startTime = time.time()
     n = len(mtrx)
-    mK = np.copy(mtrx)
+    H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
+    mK = H
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
         s = mK[n-1][n-1]
         smult = np.eye(n) * s
-        # Q,R = QRDecomp(np.subtract(mK,smult))
+        Q,R = QRDecomp(np.subtract(mK,smult))
         # startQR = time.time()
-        Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
+        # Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
         # endQR = time.time()
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
@@ -154,6 +156,7 @@ def QR_EigValue(mtrx, iteration=100000) :
             print("Iterasi", i+1)
         if (isUpperTriangular(mK)) :
             break
+    QTdotQ = HQ @ QTdotQ
     # Waktu akhir
     endTime = time.time()
     print("Waktu eksekusi : ", endTime-startTime)
@@ -262,15 +265,15 @@ for i in range (len(imgVectorMatrix)) :
     imgVectorMatrix[i] -= avgVector
 
 # print(imgVectorMatrix)
-# i = 1
 
 # Munculin norm face
+i = 1
 for imgData in imgVectorMatrix :
     filename = "./norm face test/normFace"+str(i)+".jpg"
     cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
     i += 1
 
-# 4. Menghitung matriks covariance
+# 4. Menghitung matriks kovarian
 mImgTrans = np.transpose(imgVectorMatrix)
 covar = np.dot(imgVectorMatrix, mImgTrans)
 
@@ -302,12 +305,16 @@ sorted_eigVector = np.array(sorted_eigVector, dtype=np.float64).T
 for i in range(len(sorted_eigVal)) :
     if(abs(sorted_eigVal[i] - sorted_eigValBuiltIn[i]) > 1e-3) :
         print("Eigenvalue beda jauh")
+# print(sorted_eigVal)
+# print(sorted_eigValBuiltIn)
 
 for i in range(len(sorted_eigVector)) :
     for j in range(len(sorted_eigVector[i])) :
         if (abs(abs(sorted_eigVector[i][j]) - abs(sorted_eigVectorBuiltIn[i][j])) > 1e-3) :
             print("Eigenvector beda jauh")
             break
+# print(sorted_eigVector)
+# print(sorted_eigVectorBuiltIn)
 
 # print("Nilai eigen algo sendiri")
 # print(eigValue)
