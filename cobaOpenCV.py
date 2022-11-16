@@ -7,7 +7,7 @@ import scipy
 import time
 import sympy
 
-# Prosedur Tambahan
+# Prosedur dan fungsi Tambahan
 def vectorToImg(v, row,col) :
     # Mengubah vektor v menjadi grid pixel gambar berukuran row x col
     # KAMUS LOKAL
@@ -27,19 +27,6 @@ def split_test_train(inputDir, outputDir,x) :
     splitfolders.ratio(inputDir, output=outputDir, seed=1337, ratio = (x, 1-x))
     return 
 
-def vectorLength(v) :
-    # Menghitung panjang vektor v
-    # KAMUS LOKAL
-    # length : integer
-    # i : integer
-
-    # ALGORITMA 
-    length = 0
-    for i in range(len(v)) :
-        length += pow(v[i],2)
-    length = math.sqrt(length)
-    return length
-
 def normalize(v) :
     # Menghasilkan vektor hasil normalisasi dari vektor v
     # KAMUS LOKAL
@@ -47,7 +34,7 @@ def normalize(v) :
     # vLength : int
 
     # ALGORITMA
-    vLength = vectorLength(v)
+    vLength = np.linalg.norm(v)
     vNorm = v
     for i in range(len(vNorm)) :
         vNorm[i] /= vLength 
@@ -128,7 +115,7 @@ def QRDecomp(mtrx) :
     # Q = np.transpose(QTrans)
     # return (Q,R)
 
-def QR_EigValue(mtrx, iteration=5000) :
+def QREigenBuiltIn(mtrx, iteration=5000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
@@ -179,7 +166,7 @@ def QR_EigValue(mtrx, iteration=5000) :
     # return np.diag(mK), QTdotQ
 
 def rayleigh_iteration(mtrx):
-    # Menghitung eigenvector dan eigenvalue memakai rayleigh quotient
+    # Menghitung eigenvector dan eigenvalue memakai rayleigh quotient iteration
     # Sumber : https://codereview.stackexchange.com/questions/229457/algorithm-that-generates-orthogonal-vectors-c-implementation (dapetin vektor ortogonal)
     #          https://en.wikipedia.org/wiki/Rayleigh_quotient_iteration
     n = mtrx.shape[0]
@@ -267,11 +254,11 @@ for i in range (len(imgVectorMatrix)) :
 # print(imgVectorMatrix)
 
 # Munculin norm face
-i = 1
-for imgData in imgVectorMatrix :
-    filename = "./norm face test/normFace"+str(i)+".jpg"
-    cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
-    i += 1
+# i = 1
+# for imgData in imgVectorMatrix :
+#     filename = "./norm face test/normFace"+str(i)+".jpg"
+#     cv2.imwrite(filename,vectorToImg(imgData,rows,cols))
+#     i += 1
 
 # 4. Menghitung matriks kovarian
 mImgTrans = np.transpose(imgVectorMatrix)
