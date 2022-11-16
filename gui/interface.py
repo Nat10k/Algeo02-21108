@@ -9,6 +9,18 @@ window.configure(bg='#ffffff')
 window.resizable(False,False)
 window.title("Face Recognition")
 
+#background window
+#C = tk.Canvas(window, bg="blue", height=250, width=300)
+
+#window_bg_img = tk.PhotoImage(file='./gui/images/windowbackground.png')
+#window_bg_img_open = Image.open("./gui/images/windowbackground.png")
+#resize_window_bg_img = window_bg_img_open.resize((1000, 500), Image.Resampling.LANCZOS)
+#window_background = ImageTk.PhotoImage(resize_window_bg_img)
+#window_bg_label = tk.Label(window, text=window_background)
+#window_bg_label.image = window_background
+
+#window_bg_label.place(x=0, y=0)
+#window_bg_label.pack()
 
 
 
