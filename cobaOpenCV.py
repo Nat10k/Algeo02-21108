@@ -5,7 +5,7 @@ import glob
 import math
 import scipy
 import time
-import sympy
+# import sympy
 
 # Prosedur dan fungsi Tambahan
 def vectorToImg(v, row,col) :
