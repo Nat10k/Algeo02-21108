@@ -28,24 +28,67 @@ def isUpperTriangular(mtrx) :
                 return False
     return True
 
+def HouseHolder(vec) :
+    # Menghasilkan reflektor householder berdasarkan vektor vec
+    # Sumber : https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    normx = np.linalg.norm(vec)
+    if (normx < 1e-5) :
+        H = np.eye(len(vec))
+        return H
+    s = -np.sign(vec[0])
+    u1 = vec[0] - s*normx
+    w = vec/u1
+    w[0] = 1
+    tau = -s*u1/normx
+    H = np.eye(len(vec)) - tau*w*np.reshape(w,(len(w),1))
+    return H
+
+def Tridiagonalize(mtrx) :
+    # Ubah mtrx menjadi matriks tridiagonal
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    n = len(mtrx)
+    m = np.array(mtrx,dtype=np.float64)
+    Q = np.eye(n)
+    if (n > 2) :
+        for i in range(n-2) :
+            HH = np.eye(n)
+            HH[i+1:,i+1:] = HouseHolder(m[i+1:,i])
+            m = HH @ m @ HH.T
+            Q = HH @ Q
+    for i in range(len(m)) :
+        for j in range(len(m[i])) :
+            if (abs(m[i][j]) < 1e-7) :
+                m[i][j] = 0
+    return m,Q
+
 def QRDecomp(mtrx) :
     # Memberikan hasil dekomposisi QR dari matriks mtrx
-    # Sumber : https://www.codeproject.com/Articles/5319754/Can-QR-Decomposition-Be-Actually-Faster-Schwarz-Ru#mod_gs
+    # Sumber : https://www.ibm.com/docs/en/essl/6.2?topic=llss-sgeqrf-dgeqrf-cgeqrf-zgeqrf-general-matrix-qr-factorization
+    #          https://www.r-bloggers.com/2017/04/qr-decomposition-with-householder-reflections/#:~:text=QR%20Decomposition%20with%20Householder%20Reflections%20The%20Householder%20reflection,A%20to%20construct%20the%20upper%20triangular%20matrix%20R.
+    #          https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
     # KAMUS LOKAL
     # i,k : integer
     # Q, R : array of array of integer
     # u : array of integer
     
     # ALGORITMA
-    Q = np.array(mtrx, dtype = np.float64)
-    R = np.zeros((mtrx.shape[0], mtrx.shape[0]), dtype=np.float64)
-    for k in range (len(R)) :
-        for i in range(k) :
-            R[i,k] = np.dot(Q[:,i].T, Q[:,k])
-            Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
-        R[k,k] = np.linalg.norm(Q[:,k])
-        Q[:,k] = Q[:,k] / R[k,k]
-    return -Q,-R
+    rows, cols = mtrx.shape
+    Q = np.eye(rows)
+    R = np.copy(mtrx)
+
+    for i in range(cols) :
+        HH = np.eye(cols)
+        HH[i:,i:] = HouseHolder(R[i:,i])
+        R = np.dot(HH,R)
+        if (i<rows-1) :
+            R[i+1:,i] = 0
+        Q = np.dot(Q,HH)
+    return Q,R
 
 def QREigenSendiri(mtrx, iteration=5000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
@@ -59,7 +102,7 @@ def QREigenSendiri(mtrx, iteration=5000) :
     # Ditambahin cek waktu
     startTime = time.time()
     n = len(mtrx)
-    H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
+    H, HQ = Tridiagonalize(mtrx)
     mK = H
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
@@ -75,10 +118,10 @@ def QREigenSendiri(mtrx, iteration=5000) :
     QTdotQ = HQ @ QTdotQ
     # Waktu akhir
     endTime = time.time()
-    print("Waktu eksekusi : ", endTime-startTime)
+    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
-def QREigenBuiltIn(mtrx, iteration=10000) :
+def QREigenBuiltIn(mtrx, iteration=5000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
@@ -90,7 +133,8 @@ def QREigenBuiltIn(mtrx, iteration=10000) :
     # Ditambahin cek waktu
     startTime = time.time()
     n = len(mtrx)
-    H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
+    # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
+    H, HQ = Tridiagonalize(mtrx)
     mK = H
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
@@ -106,7 +150,7 @@ def QREigenBuiltIn(mtrx, iteration=10000) :
     QTdotQ = HQ @ QTdotQ
     # Waktu akhir
     endTime = time.time()
-    print("Waktu eksekusi : ", endTime-startTime)
+    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 def rayleigh_iteration(mtrx):
@@ -210,22 +254,19 @@ def EigenFace(imgVectorMatrix, method) :
     sorted_eigVal = eigValue[eigSortIdx]
     sort_eigenFace = eigenFace[eigSortIdx]
 
-    # Ambil eigenface yang cukup untuk mewakili 95% variasi wajah
-    # Sumber : wikipedia eigen face
-    totalEigValSum = sum(sorted_eigVal)
     largest_eigenFace = []
-    currSum = 0
-    for i in range(len(sorted_eigVal)) :
-        currSum += sorted_eigVal[i]
-        largest_eigenFace.append(sort_eigenFace[i])
-        # if (abs(currSum/totalEigValSum) >= 0.95) :
-        #     break
+    for i in range(len(sorted_eigVal)//10) :
+        if (i > 0) :
+            if (abs(sorted_eigVal[i]/sorted_eigVal[0]) > 1e-5) :
+                largest_eigenFace.append(sort_eigenFace[i])
+            else :
+                break
+        else :
+            largest_eigenFace.append(sort_eigenFace[i])
     largest_eigenFace = np.array(largest_eigenFace, dtype=np.float64)
 
     # Membuat vektor koefisien tiap gambar terhadap eigenFace
     coefTrain = []
-    print(len(imgVectorMatrix))
-    print(len(imgVectorMatrix[0]))
     for i in range(len(imgVectorMatrix)) :
         coefI = []
         for j in range(len(largest_eigenFace)) :
@@ -271,19 +312,18 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     avgDistance /= len(coefTrain)
     print(avgDistance)
     print(min_dist)
-    # if (min_dist > 2e4) :
-    #     print("Wajah tidak ada di database")
-    # else :
-    cv2.imwrite('closestImg.jpg', initImage[idx])
+    if (min_dist > 1e4) :
+        print("Wajah tidak ada di database")
+    else :
+        cv2.imwrite('closestImg.jpg', initImage[idx])
 
 # Dicoba
-imgVectorMtrx, initImage = InputFace('./split data/train/*')
+imgVectorMtrx, initImage = InputFace('./split data/train')
 rows = len(initImage[0])
 cols = len(initImage[0][0])
-mean, eigenFace, coefTrain, execTime = EigenFace(imgVectorMtrx, 'Rayleigh')
-i = 1
-for eigFace in eigenFace :
-    filename = "./eigen face test/eigFace"+str(i)+".jpg"
-    cv2.imwrite(filename,vectorToImg(eigFace,rows,cols))
-    i += 1
-RecognizeFace('./testImg.jpg', eigenFace, coefTrain, mean, initImage)
+mean, eigenFace, coefTrain, execTime = EigenFace(imgVectorMtrx, 'QRBuiltIn')
+decision = input()
+while (decision != 'EXIT') :
+    if (decision == 'R') :
+        RecognizeFace('./testImg.jpg', eigenFace, coefTrain, mean, initImage)
+    decision = input()

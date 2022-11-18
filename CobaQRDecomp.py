@@ -79,81 +79,67 @@ def isDiagSame(mtrx1, mtrx2) :
             return False
     return True
 
-def HHReflection(vec) :
-    # Menghitung refleksi householder matriks mtrx
-    # Sumber : https://scicomp.stackexchange.com/questions/30989/what-is-the-reason-that-lapack-uses-tau-in-qr-decomposition-instead-of-norma
-    #          https://icl.utk.edu/lapack-forum/viewtopic.php%3Ff=2&t=5101.html#:~:text=Matlab%20use%20LAPACK%20to%20calculate%20the%20QR%20decomposition%2C,%27%20%22%3A%20transpose%20operator%20and%20I%3A%20identity%20matrix.
+def HouseHolder(vec) :
+    # Menghasilkan reflektor householder berdasarkan vektor vec
+    # Sumber : https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
     # KAMUS LOKAL
+
     # ALGORITMA
-    vecHH = np.copy(vec)
-    n = vecHH.shape[0]
-    alpha = vecHH[0]
-    I = np.eye(n)
-    if (n <= 1) :
-        tau = 0
-        return
-    xnorm = np.linalg.norm(vecHH[1:])
-    if (xnorm == 0) :
-        tau = 0
-    else : 
-        beta = -np.sign(alpha) * math.sqrt(alpha**2 + xnorm**2)
-        tau = (beta-alpha)/beta
-        vecHH[1:] = vecHH[1:]/(alpha-beta)
-        vecHH[0] = beta
-    HH = I-tau*(vecHH @ vecHH.T)
-    return HH
+    normx = np.linalg.norm(vec)
+    if (normx == 0) :
+        H = np.eye(len(vec))
+        return H
+    s = -np.sign(vec[0])
+    u1 = vec[0] - s*normx
+    w = vec/u1
+    w[0] = 1
+    tau = -s*u1/normx
+    H = np.eye(len(vec)) - tau*w*np.reshape(w,(len(w),1))
+    return H
 
-# def HessenbergReduction(mtrx) : # MASIH SALAH
-#     # Menghasilkan matriks hessenberg dari mtrx
-#     # Sumber : https://pi.math.cornell.edu/~web6140/TopTenAlgorithms/QRalgorithm.html
-#     #          https://math.stackexchange.com/questions/732924/reducing-a-matrix-to-upper-hessenberg-form-using-householder-transformations-in
-#     #          https://github.com/scipy/scipy/blob/v1.9.3/scipy/linalg/_decomp.py#L1359-L1436
-#     # KAMUS LOKAL
-#     # n : integer
+def Tridiagonalize(mtrx) :
+    # Ubah mtrx menjadi matriks tridiagonal
+    # KAMUS LOKAL
 
-#     # ALGORITMA
-    
-#     for i in range(n-2) :
-#         return
-#     transMtrx = mtrx.T
-#     Hessenberg = mtrx
-#     if (n > 2) :
-#         a1 = transMtrx[0,1:]
-#         e1 = np.zeros(n-1)
-#         e1[0] = 1
-#         sign = np.sign(a1[0])
-#         v = (a1 + (sign*np.linalg.norm(a1)*e1)) # Pake norm built in dulu krn gtw knp kalo pake vectorLength overflow
-#         v /= np.linalg.norm(v)
-#         Q1 = np.eye(n-1) - 2*(v @ v.T)
-#         mtrx[1:,0] = Q1 @ mtrx[1:,0]
-#         mtrx[0,1:] = Q1 @ mtrx[0,1:]
-#         mtrx[1:,1:] = Q1 @ mtrx[1:,1:] @ Q1.T
-#         Hessenberg = HessenbergReduction(mtrx[1:,1:])
-#     else :
-#         Hessenberg = np.copy(mtrx)
-#     return mtrx
+    # ALGORITMA
+    n = len(mtrx)
+    m = np.copy(mtrx)
+    Q = np.eye(n)
+    if (n > 2) :
+        for i in range(n-2) :
+            HH = np.eye(n)
+            HH[i+1:,i+1:] = HouseHolder(m[i+1:,i])
+            m = HH @ m @ HH.T
+            Q = HH @ Q
+    for i in range(len(m)) :
+        for j in range(len(m[i])) :
+            if (abs(m[i][j]) < 1e-6) :
+                m[i][j] = 0
+    return m,Q
 
 def QRDecomp(mtrx) :
     # Memberikan hasil dekomposisi QR dari matriks mtrx
     # Sumber : https://www.ibm.com/docs/en/essl/6.2?topic=llss-sgeqrf-dgeqrf-cgeqrf-zgeqrf-general-matrix-qr-factorization
     #          https://www.r-bloggers.com/2017/04/qr-decomposition-with-householder-reflections/#:~:text=QR%20Decomposition%20with%20Householder%20Reflections%20The%20Householder%20reflection,A%20to%20construct%20the%20upper%20triangular%20matrix%20R.
+    #          https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
     # KAMUS LOKAL
     # i,k : integer
     # Q, R : array of array of integer
     # u : array of integer
     
     # ALGORITMA
-    k = min(len(mtrx),len(mtrx[0]))
-    v = np.zeros(k)
-    I = np.eye(k)
-    Q = np.zeros(mtrx.shape)
-    for k in range (len(R)) :
-        for i in range(k) :
-            R[i,k] = np.dot(Q[:,i].T, Q[:,k])
-            Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
-        R[k,k] = np.linalg.norm(Q[:,k])
-        Q[:,k] = Q[:,k] / R[k,k]
-    return -Q,-R
+    rows, cols = mtrx.shape
+    Q = np.eye(rows)
+    R = np.copy(mtrx)
+
+    for i in range(cols-1) :
+        HH = np.eye(cols)
+        HH[i:,i:] = HouseHolder(R[i:,i])
+        R = HH @ R
+        if (i<rows-1) :
+            R[i+1:,i] = 0
+        Q = Q @ HH
+    return Q,R
 
     # KAMUS LOKAL LAMA
     # i, j, dotProduct : integer
@@ -241,16 +227,16 @@ def QR_EigValue(mtrx, iteration=10000) :
     # Ditambahin cek waktu
     startTime = time.time()
     n = len(mtrx)
-    H,HQ = scipy.linalg.hessenberg(mtrx,calc_q=True)
+    H,HQ = Tridiagonalize(mtrx)
     mK = H
     I = np.eye(n)
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
         s = mK[n-1][n-1]
         smult = s * I
-        Q,R = QRDecomp(np.subtract(mK,smult))
+        # Q,R = QRDecomp(np.subtract(mK,smult))
         # startQR = time.time()
-        # Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
+        Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
         # endQR = time.time()
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
@@ -402,9 +388,14 @@ def rayleigh_iteration(mtrx):
     return (eigValues, eigVectors.T)
 
 
-# test = np.random.randint(0, 255, (5,5))
-# test = np.dot(test, test.T)
-# print(test)
+test = np.random.randint(0, 255, (5,5))
+test = np.dot(test, test.T)
+print(test)
+# Test tridiagonalisasi
+# test = [[4,1,-2,2],[1,2,0,1],[-2,0,3,-2],[2,1,-2,-1]]
+# tSendiri, HQ = Tridiagonalize(test)
+# print(tSendiri)
+
 # test = np.array([[ 56823, 68023, 85245, 91181, 37667],
 #  [ 68023, 8820, 10390, 105639, 48333],
 #  [ 8524, 10390, 17685, 16714, 105370],
@@ -428,36 +419,37 @@ def rayleigh_iteration(mtrx):
 # print(M)
 # print(QQ)
 
-# # QR
-# QRVal, QRVec = QR_EigValue(test)
-# # Rayleigh
-# value, vector = rayleigh_iteration(test)
-# # Built in
-# BuiltinValue, BuiltinVector = np.linalg.eig(test)
+# QR
+QRVal, QRVec = QR_EigValue(test)
+# Rayleigh
+value, vector = rayleigh_iteration(test)
+# Built in
+BuiltinValue, BuiltinVector = np.linalg.eig(test)
 
-# eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-# sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
-# sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
+eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
+sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
 
-# eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-# sorted_eigValRayleigh = value[eigSortIdxRayleigh]
-# sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
+eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigValRayleigh = value[eigSortIdxRayleigh]
+sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
 
-# eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-# sorted_eigValQR = QRVal[eigSortIdxQR]
-# sorted_eigVectQR = QRVec[:,eigSortIdxQR]
+eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigValQR = QRVal[eigSortIdxQR]
+sorted_eigVectQR = QRVec[:,eigSortIdxQR]
 
-# print("QR")
-# print(sorted_eigValQR)
-# print(sorted_eigVectQR)
-# print()
-# print("Rayleigh")
-# print(sorted_eigValRayleigh)
-# print(sorted_eigVectRayleigh)
-# print()
-# print("Built in")
-# print(sorted_eigValBuiltIn)
-# print(sorted_eigVectBuiltIn)
+print("QR")
+print(sorted_eigValQR)
+print(sorted_eigVectQR)
+print()
+print("Rayleigh")
+print(sorted_eigValRayleigh)
+print(sorted_eigVectRayleigh)
+print()
+print("Built in")
+print(sorted_eigValBuiltIn)
+print(sorted_eigVectBuiltIn)
+
 # Pake power iteration (salah)
 # kLargestEigVector =[]
 # for i in range (len(test)//10) :
@@ -474,6 +466,18 @@ def rayleigh_iteration(mtrx):
 # print(HessenbergReduction(test))
 
 # Tes Householder Reflection
-test = np.array([[2,-2,18],[2,1,0],[1,2,0]])
-HH = HHReflection(test[0])
-print(HH)
+# test = np.array([1,-2,2])
+# HH = HouseHolder(test)
+# print(HH)
+
+# Test QR decomp Householder
+# startTime = time.time()
+# Q,R = QRDecomp(test)
+# endTime = time.time()
+# print(endTime-startTime)
+# startTime = time.time()
+# QBuilt,RBuilt = np.linalg.qr(test)
+# endTime = time.time()
+# print(endTime-startTime)
+# print(Q,R)
+# print(QBuilt,RBuilt)
