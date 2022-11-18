@@ -2,17 +2,14 @@ import cv2
 import schedule
 
 cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
-img_counter = 0
 
 def capture():
-    global img_counter
-    img_name = "image_{}.png".format(img_counter)
+    img_name = "image_webcam.jpg"
     cv2.imwrite(img_name, frame)
     print("Screenshot taken")
-    img_counter += 1
 
 # Set up schedule before loop
-schedule.every(20).seconds.do(capture)
+schedule.every(10).seconds.do(capture)
 
 while True:
     ret, frame = cam.read()
