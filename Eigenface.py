@@ -282,6 +282,7 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     # KAMUS LOKAL
 
     # ALGORITMA
+    start = time.time()
     # Baca gambar uji
     testImg = cv2.imread(dir, 0).flatten()
     testImg -= mean
@@ -316,6 +317,8 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
         print("Wajah tidak ada di database")
     else :
         cv2.imwrite('closestImg.jpg', initImage[idx])
+    end = time.time()
+    print("Waktu pengenalan wajah :", end-start)
 
 # Dicoba
 imgVectorMtrx, initImage = InputFace('./split data/train')
