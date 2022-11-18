@@ -1,15 +1,23 @@
 import cv2
 import schedule
+import Eigenface
 
 cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
 
 def capture():
     img_name = "image_webcam.jpg"
-    cv2.imwrite(img_name, frame)
+    cv2.imwrite(img_name, resize)
     print("Screenshot taken")
+    Eigenface.RecognizeFace('./image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
 
 # Set up schedule before loop
 schedule.every(10).seconds.do(capture)
+
+# Proses dataset 
+imgVectorMtrx, initImage = Eigenface.InputFace('./Face Cam Data')
+rows = len(initImage[0])
+cols = len(initImage[0][0])
+mean, eigenFace, coefTrain, execTime = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
 
 while True:
     ret, frame = cam.read()

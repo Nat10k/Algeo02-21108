@@ -319,14 +319,3 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
         cv2.imwrite('closestImg.jpg', initImage[idx])
     end = time.time()
     print("Waktu pengenalan wajah :", end-start)
-
-# Dicoba
-imgVectorMtrx, initImage = InputFace('./split data/train')
-rows = len(initImage[0])
-cols = len(initImage[0][0])
-mean, eigenFace, coefTrain, execTime = EigenFace(imgVectorMtrx, 'QRBuiltIn')
-decision = input()
-while (decision != 'EXIT') :
-    if (decision == 'R') :
-        RecognizeFace('./testImg.jpg', eigenFace, coefTrain, mean, initImage)
-    decision = input()
