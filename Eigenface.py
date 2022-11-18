@@ -78,7 +78,7 @@ def QREigenSendiri(mtrx, iteration=5000) :
     print("Waktu eksekusi : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
-def QREigenBuiltIn(mtrx, iteration=5000) :
+def QREigenBuiltIn(mtrx, iteration=10000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
@@ -201,38 +201,40 @@ def EigenFace(imgVectorMatrix, method) :
             if (method == 'Rayleigh') :
                 eigValue, eigVector = rayleigh_iteration(covar)
     
-    eigSortIdx = eigValue.argsort()[::-1]
-    sorted_eigVal = eigValue[eigSortIdx]
-    sort_eigVector = eigVector[:,eigSortIdx]
-    largest_eigVector = []
-    for i in range(len(sort_eigVector)) :
-        if (i > 0) :
-            if (abs(sorted_eigVal[i]/sorted_eigVal[i-1]) > 1e-3) :
-                largest_eigVector.append(sort_eigVector[i])
-            else :
-                break
-        else :
-            largest_eigVector.append(sort_eigVector[i])
-    largest_eigVector = np.array(largest_eigVector, dtype=np.float64).T
-    print(len(largest_eigVector))
-
-    # Membuat eigenface
-    eigenFace = np.transpose(np.dot(mImgTrans, largest_eigVector))
+    # Membuat eigenface dan mengurutkannya
+    eigenFace = np.transpose(np.dot(mImgTrans, eigVector))
     for i in range(len(eigenFace)) : # Normalisasi eigenface supaya hasil perhitungan jarak tidak terlalu besar
         eigenFace[i] /= np.linalg.norm(eigenFace[i])
-    
+
+    eigSortIdx = eigValue.argsort()[::-1]
+    sorted_eigVal = eigValue[eigSortIdx]
+    sort_eigenFace = eigenFace[eigSortIdx]
+
+    # Ambil eigenface yang cukup untuk mewakili 95% variasi wajah
+    # Sumber : wikipedia eigen face
+    totalEigValSum = sum(sorted_eigVal)
+    largest_eigenFace = []
+    currSum = 0
+    for i in range(len(sorted_eigVal)) :
+        currSum += sorted_eigVal[i]
+        largest_eigenFace.append(sort_eigenFace[i])
+        # if (abs(currSum/totalEigValSum) >= 0.95) :
+        #     break
+    largest_eigenFace = np.array(largest_eigenFace, dtype=np.float64)
+
     # Membuat vektor koefisien tiap gambar terhadap eigenFace
     coefTrain = []
+    print(len(imgVectorMatrix))
+    print(len(imgVectorMatrix[0]))
     for i in range(len(imgVectorMatrix)) :
         coefI = []
-        for j in range(len(eigenFace)) :
-            coefI.append(np.dot(imgVectorMatrix[i],eigenFace[j]))
+        for j in range(len(largest_eigenFace)) :
+            coefI.append(np.dot(imgVectorMatrix[i],largest_eigenFace[j]))
         coefTrain.append(coefI)
-    
     end = time.time()
     execTime = end-start
     print("Waktu eksekusi : ", execTime)
-    return mean, eigenFace, coefTrain, execTime
+    return mean, largest_eigenFace, coefTrain, execTime
 
 def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     # Melakukan pengenalan wajah berdasarkan data eigenFace, mean, dan coefTrain yang ada
@@ -250,6 +252,7 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     idx = 0
 
     # Hitung kedekatan wajah dengan dataset berdasarkan Euclidean Distance
+    avgDistance = 0
     for i in range (len(coefTrain)) :
         distance = 0
         for j in range(len(coefTrain[i])) :
@@ -258,19 +261,29 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
             else :
                 distance += math.pow(coefTrain[i][j] - coefTest[j],2)
         distance = math.sqrt(distance)
+        avgDistance += distance
         if (i == 0) :
             min_dist = distance
         else :
             if (distance < min_dist) :
                 min_dist = distance
                 idx = i
+    avgDistance /= len(coefTrain)
+    print(avgDistance)
     print(min_dist)
-    if (min_dist > 1e4) :
-        print("Wajah tidak ada di database")
-    else :
-        cv2.imwrite('closestImg.jpg', initImage[idx])
+    # if (min_dist > 2e4) :
+    #     print("Wajah tidak ada di database")
+    # else :
+    cv2.imwrite('closestImg.jpg', initImage[idx])
 
 # Dicoba
 imgVectorMtrx, initImage = InputFace('./split data/train/*')
+rows = len(initImage[0])
+cols = len(initImage[0][0])
 mean, eigenFace, coefTrain, execTime = EigenFace(imgVectorMtrx, 'Rayleigh')
+i = 1
+for eigFace in eigenFace :
+    filename = "./eigen face test/eigFace"+str(i)+".jpg"
+    cv2.imwrite(filename,vectorToImg(eigFace,rows,cols))
+    i += 1
 RecognizeFace('./testImg.jpg', eigenFace, coefTrain, mean, initImage)
