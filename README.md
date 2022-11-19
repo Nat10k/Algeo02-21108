@@ -29,6 +29,7 @@ Pada Tugas Besar kali ini, program yang kami buat dapat digunakan untuk :
 ├─── src
 │   ├─── GUI
 │   │   ├─── images
+│   │   └─── interface.py
 |   ├─── camRecord.py
 |   ├─── cobaOpenCV.py
 |   ├─── CobaQRDecomp.py
