@@ -5,8 +5,8 @@
 ## Daftar Isi
 * [Anggota Kelompok](#anggota-kelompok)
 * [Implementasi Program](#implementasi-program)
+* [Sistematika File](#sistematika-file)
 * [Cara Menjalankan Program](#cara-menjalankan-program)
-
 
 ## Anggota Kelompok
 NIM | Nama |
@@ -22,6 +22,26 @@ Pada Tugas Besar kali ini, program yang kami buat dapat digunakan untuk :
 3. Program menghitung jarak euclidean dan nilai eigen & vektor eigen yang ditulis. Tidak boleh menggunakan fungsi yang sudah tersedia di dalam library atau Bahasa Python.
 4. [BONUS] Terdapat fitur kamera yang dapat mengenali wajah secara realtime menggunakan webcam ketika program dijalankan dengan mekanisme pengambilan gambar yang dibebaskan.
 
+## Sistematika File
+```bash
+.
+├─── doc
+├─── src
+│   ├─── GUI
+│   │   ├─── images
+|   ├─── camRecord.py
+|   ├─── cobaOpenCV.py
+|   ├─── CobaQRDecomp.py
+|   ├─── Eigenface.py
+|   └─── webcam.py
+├─── test
+│   ├─── Dataset
+│   ├─── Face Cam Data
+│   └─── Gambar Uji
+├─── Average face.jpg
+├─── testImg.jpg
+└─── README.md
+```
 
 ## Cara Menjalankan Program
 < isi disini >
