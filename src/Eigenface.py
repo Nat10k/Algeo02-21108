@@ -320,7 +320,7 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     end = time.time()
     print("Waktu pengenalan wajah :", end-start)
 
-""" imgVectorMtrx, initImage = InputFace('./split data/train')
+""" imgVectorMtrx, initImage = InputFace('./test/Dataset')
 mean, eigenFace, coefTrain, execTime = EigenFace(imgVectorMtrx, 'QRBuiltIn')
 decision = input()
 while (decision != 'EXIT') :

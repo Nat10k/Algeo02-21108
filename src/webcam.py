@@ -14,7 +14,7 @@ def capture():
 schedule.every(10).seconds.do(capture)
 
 # Proses dataset 
-imgVectorMtrx, initImage = Eigenface.InputFace('./Face Cam Data')
+imgVectorMtrx, initImage = Eigenface.InputFace('./test/Face Cam Data')
 mean, eigenFace, coefTrain, execTime = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
 
 while True:

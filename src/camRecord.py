@@ -1,7 +1,7 @@
 import cv2
 import time
 
-faceDir = 'Face Cam Data'
+faceDir = './test/Face Cam Data'
 cam = cv2.VideoCapture(0)   # Index webcam, kebetulan main ku 1
 userFace = input("Insert your name to record (use underscore as space): ")
 print("Please wait the image record process")
@@ -19,7 +19,7 @@ while True :  # Untuk menangkap gambar selama gaada kondisi berhenti
     cv2.imwrite(faceDir+'/'+namaFile,resize)
     ambilData += 1
     
-    cv2.imshow('Leon\'s Webcam',resize)   # Menampilkan gambar cam
+    cv2.imshow('Recording Webcam',resize)   # Menampilkan gambar cam
     k = cv2.waitKey(1) & 0xFF
     if k == 27 or k == ord('q'):   # Command quit : q
         break
