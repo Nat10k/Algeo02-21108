@@ -141,6 +141,45 @@ def QRDecomp(mtrx) :
         Q = Q @ HH
     return Q,R
 
+def qr_gs_modsr(A, type=np.float64):
+    
+    A = np.array(A, dtype=type)
+    
+    (m,n) = np.shape(A) # Get matrix A's shape m - # of rows, m - # of columns
+   
+    # Q - an orthogonal matrix of m-column vectors
+    # R - an upper triangular matrix (the Gaussian elimination of A to the row-echelon form)
+    
+    # Initialization: [ Q - multivector Q = A of shape (m x n) ]
+    #                 [ R - multivector of shape (n x n)       ]
+
+    Q = np.array(A, dtype=type)      # Q - matrix A
+    R = np.zeros((n, n), dtype=type) # R - matrix of 0's    
+
+    # **** Objective: ****
+
+    # For each column vector r[k] in R:
+       # Compute r[k,i] element in R, k-th column q[k] in Q;
+
+    for k in range(n):
+        # For a span of the previous column vectors q[0..k] in Q, 
+        # compute the R[i,k] element in R as the inner product of vectors q[i] and q[k],
+        # compute k-th column vector q[k] as the product of scalar R[i,k] and i-th vector q[i],
+        # subtracting it from the k-th column vector q[k] in Q
+        for i in range(k):
+
+            # **** Compute k-th column q[k] of Q and k-th row r[k] of R **** 
+            R[i,k] = np.transpose(Q[:,i]).dot(Q[:,k])
+            Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
+            
+        # Compute the r[k,k] pseudo-diagonal element in R 
+        # as the Euclidean norm of the k-th vector q[k] in Q,
+
+        # Normalize the k-th vector q[k] in Q, dividing it by the norm r[k,k]
+        R[k,k] = np.linalg.norm(Q[:,k]); Q[:,k] = Q[:,k] / R[k,k]
+    
+    return -Q, -R  # Return the resultant negative matrices Q and R 
+
     # KAMUS LOKAL LAMA
     # i, j, dotProduct : integer
     # transM, Q, R : array of array of integer
@@ -234,9 +273,10 @@ def QR_EigValue(mtrx, iteration=10000) :
     for i in range(iteration) :
         s = mK[n-1][n-1]
         smult = s * I
+        Q,R = qr_gs_modsr(np.subtract(mK,smult))
         # Q,R = QRDecomp(np.subtract(mK,smult))
         # startQR = time.time()
-        Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
+        # Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
         # endQR = time.time()
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
@@ -388,7 +428,7 @@ def rayleigh_iteration(mtrx):
     return (eigValues, eigVectors.T)
 
 
-test = np.random.randint(0, 255, (5,5))
+test = np.random.randint(0, 255, (100,100))
 test = np.dot(test, test.T)
 print(test)
 # Test tridiagonalisasi
@@ -419,36 +459,36 @@ print(test)
 # print(M)
 # print(QQ)
 
-# QR
-QRVal, QRVec = QR_EigValue(test)
-# Rayleigh
-value, vector = rayleigh_iteration(test)
-# Built in
-BuiltinValue, BuiltinVector = np.linalg.eig(test)
+# # QR
+# QRVal, QRVec = QR_EigValue(test)
+# # Rayleigh
+# value, vector = rayleigh_iteration(test)
+# # Built in
+# BuiltinValue, BuiltinVector = np.linalg.eig(test)
 
-eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
-sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
+# eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+# sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
+# sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
 
-eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-sorted_eigValRayleigh = value[eigSortIdxRayleigh]
-sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
+# eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+# sorted_eigValRayleigh = value[eigSortIdxRayleigh]
+# sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
 
-eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-sorted_eigValQR = QRVal[eigSortIdxQR]
-sorted_eigVectQR = QRVec[:,eigSortIdxQR]
+# eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+# sorted_eigValQR = QRVal[eigSortIdxQR]
+# sorted_eigVectQR = QRVec[:,eigSortIdxQR]
 
-print("QR")
-print(sorted_eigValQR)
-print(sorted_eigVectQR)
-print()
-print("Rayleigh")
-print(sorted_eigValRayleigh)
-print(sorted_eigVectRayleigh)
-print()
-print("Built in")
-print(sorted_eigValBuiltIn)
-print(sorted_eigVectBuiltIn)
+# print("QR")
+# print(sorted_eigValQR)
+# print(sorted_eigVectQR)
+# print()
+# print("Rayleigh")
+# print(sorted_eigValRayleigh)
+# print(sorted_eigVectRayleigh)
+# print()
+# print("Built in")
+# print(sorted_eigValBuiltIn)
+# print(sorted_eigVectBuiltIn)
 
 # Pake power iteration (salah)
 # kLargestEigVector =[]
@@ -471,13 +511,13 @@ print(sorted_eigVectBuiltIn)
 # print(HH)
 
 # Test QR decomp Householder
-# startTime = time.time()
-# Q,R = QRDecomp(test)
-# endTime = time.time()
-# print(endTime-startTime)
-# startTime = time.time()
-# QBuilt,RBuilt = np.linalg.qr(test)
-# endTime = time.time()
-# print(endTime-startTime)
-# print(Q,R)
-# print(QBuilt,RBuilt)
+startTime = time.time()
+Q,R = qr_gs_modsr(test)
+endTime = time.time()
+print(endTime-startTime)
+startTime = time.time()
+QBuilt,RBuilt = np.linalg.qr(test)
+endTime = time.time()
+print(endTime-startTime)
+print(Q,R)
+print(QBuilt,RBuilt)
