@@ -5,7 +5,12 @@ import time
 import cv2
 from camRecord import main_cam
 import Eigenface
-
+sett = time.time()
+stop = 0
+hour = 0
+minute = 0
+second = 0
+milisec = 0
 #from webcam import main_webcam
 #window utama
 window = tk.Tk()
@@ -66,15 +71,32 @@ def reprint(val):
         
 def camerafunc():
     main_cam()
+#def starttime(label_result, start):
+    #global stop, hour, minute, second, milisec
+    #starts = time.time()
+    #hour = start("%H")
+    #minute = start("%M")
+    #second = start("%S")
+    #now = starts-start
+    #hour = int(now//3600)
+    #minute = int(now//60)
+    #second = int(now%60)
+    #milisec = float(now%1)*1000000
+    #if stop == 0:
+       #label_result.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
+       # label_result.after(1, starttime(label_result, start))
+        #label_result.place(relx=0.435, rely= 0.836)
 
-def insimg(label_chosen):
+def insimg(image_info):
+    global hour, minute, second, milisec, stop
+    stop = 0
     #Insert image
     filename = filedialog.askopenfilename(filetypes=[("Image Files", '.png .jpeg .jpg')])
     print('Selected:', filename)
     
     #Chosen file label
-    label_chosen = tk.Label(window, text=filename, font=("Arial", 8),fg='#525252', bg='#ffffff', wraplength=135, justify='left')
-    label_chosen.place(relx = 0.173, rely = 0.575)
+    image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
+    image_info.place(relx = 0.173, rely = 0.575)
     #Open Image
     theimg = Image.open(filename)
     #Resize Image
@@ -86,7 +108,19 @@ def insimg(label_chosen):
     label.image = img_input
     #Display image
     label.place(relx = 0.33, rely = 0.35)
+    mulai = time.time()
     Eigenface.RecognizeFace(filename, eigenface, koefTrain, mean, initImage)
+    selesai = time.time()
+    now = selesai-mulai
+    hour = int(now//3600)
+    minute = int(now//60)
+    second = int(now%60)
+    milisec = float(now%1)*100000
+    if (milisec/100000 < 0.1):
+        label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.0{milisec:.0f}")
+    else:
+        label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
+    label_execution_time.place(relx=0.435, rely= 0.836)
     clsImg = '../test/Gambar Uji/closestImg.jpg'
     resimg = Image.open(clsImg)
     res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
@@ -95,6 +129,7 @@ def insimg(label_chosen):
     label_result = tk.Label(window, image=img_res)
     label_result.image = img_res
     label_result.place(relx = 0.63, rely= 0.35)
+    damn = time.time()
 
 def dataimg(label_1):
     global eigenface
@@ -102,14 +137,25 @@ def dataimg(label_1):
     global mean
     global initImage
     global imgVectorMatrix
+    global hour, minute, second, milisec, stop
     file = filedialog.askdirectory(parent=window, title='Open 1st file')
     print('Dataset: ', file)
     label_1 = tk.Label(window, text= file, wraplength=135, font=("Arial", 8),fg='#525252', bg='#ffffff', justify='left')
     label_1.place(relx = 0.173, rely = 0.400)
+    mulai = time.time()
     imgVectorMatrix, initImage = Eigenface.InputFace(file)
     mean, eigenface, koefTrain = Eigenface.EigenFace(imgVectorMatrix, 'QRBuiltIn')
-    
-    
+    selesai = time.time()
+    now = selesai-mulai
+    hour = int(now//3600)
+    minute = int(now//60)
+    second = int(now%60)
+    milisec = float(now%1)*100000
+    if (milisec/100000 < 0.1):
+        label_load_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.0{milisec:.0f}")
+    else:
+        label_load_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
+    label_load_time.place(relx=0.435, rely= 0.88)
     #time
     #start = time.time()
     #minute = start//60
@@ -232,10 +278,14 @@ cam_button_image.place(relx = 0.835, rely = 0.855)
 cam_button_dataset = tk.Button(window, command=main_cam, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 cam_button_dataset.place(relx = 0.9, rely = 0.855)
 #Execution time - title
-label_execution_title = tk.Label(window, text="Execution time: ", font=("Roman", 11, "bold"), fg="#FFAA33", bg="#100000")
+label_execution_title = tk.Label(window, text="Execution time : ", font=("Roman", 11, "bold"), fg="#FFAA33", bg="#100000")
 label_execution_title.place(relx = 0.335, rely = 0.836)
 #Execution time - time
-label_execution_time = tk.Label(window, text=(f'00:00'), font=("Courier New", 12), bg='#100000', fg='#5aff15')
+label_execution_time = tk.Label(window, text=f"{hour:02d}:{minute:02d}:{second:02d}", font=("Courier New", 12), bg='#100000', fg='#5aff15')
 label_execution_time.place(relx=0.435, rely= 0.836)
 
+label_load_title = tk.Label(window, text="Load Dataset    :", font=("Roman", 11, "bold"), fg="#FFAA33", bg="#100000")
+label_load_title.place(relx=0.335, rely = 0.88)
+label_load_time = tk.Label(window, text=f"{hour:02d}:{minute:02d}:{second:02d}", font=("Courier New", 12), bg='#100000', fg='#5aff15')
+label_load_time.place(relx=0.435, rely= 0.88)
 window.mainloop()
