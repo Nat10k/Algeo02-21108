@@ -147,7 +147,7 @@ def QREigenBuiltIn(mtrx, iteration=5000) :
             print("Iterasi", i+1)
         if (isUpperTriangular(mK)) :
             break
-    QTdotQ = HQ @ QTdotQ
+    QTdotQ = HQ.T @ QTdotQ
     # Waktu akhir
     endTime = time.time()
     print("Waktu eksekusi QR : ", endTime-startTime)
