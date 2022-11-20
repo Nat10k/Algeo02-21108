@@ -1,7 +1,7 @@
 import cv2
 import time
 
-faceDir = './test/Face Cam Data'
+faceDir = './test/Face_Cam_Data'
 cam = cv2.VideoCapture(0)   # Index webcam, kebetulan main ku 1
 userFace = input("Insert your name to record (use underscore as space): ")
 print("Please wait the image record process")
