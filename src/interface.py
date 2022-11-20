@@ -2,6 +2,11 @@ import tkinter as tk
 from tkinter import  filedialog
 from PIL import ImageTk, Image
 import time
+import cv2
+from camRecord import main_cam
+import Eigenface
+
+#from webcam import main_webcam
 #window utama
 window = tk.Tk()
 window.geometry("1100x600")
@@ -16,8 +21,8 @@ window.title("Face Recognition")
 #C = tk.Canvas(window, bg="blue", height=250, width=300)
 #window_bg_img = tk.PhotoImage(file='./gui/images/windowbackground.png')
 #window_bg_img_open = Image.open("./gui/images/windowbackground.png")
-#window_bg_img = tk.PhotoImage(file='images/orangething.png')
-#window_bg_img_open = Image.open("images/orangething.png")
+#window_bg_img = tk.PhotoImage(file='./GUI/images/orangething.png')
+#window_bg_img_open = Image.open("./GUI/images/orangething.png")
 #resize_window_bg_img = window_bg_img_open.resize((1100, 600), Image.Resampling.LANCZOS)
 #window_background = ImageTk.PhotoImage(resize_window_bg_img)
 #window_bg_label = tk.Label(window, image=window_background)
@@ -34,11 +39,37 @@ window.title("Face Recognition")
     #popup.config = tk.Label(text="Test")
 
 #def closestresult():
-    
+#def main_webcams(): 
+   # tes = True
+   # tes = main_webcam()
+   # while (tes):
+    #    reprint(1)
+
+def reprint(val):
+    if val == 1:
+        #Chosen file label'
+        print("Gotten here!")
+        label_chosen = tk.Label(window, text='image_webcam.jpg', font=("Arial", 8),fg='#525252', bg='#ffffff', wraplength=135, justify='left')
+        label_chosen.place(relx = 0.173, rely = 0.575)
+        #Open Image
+        theimg = Image.open('image_webcam.jpg')
+        #Resize Image
+        resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
+        #Framing Image
+        img_input = ImageTk.PhotoImage(resize_img)
+        #Creating image
+        label_input = tk.Label(window, image = img_input)
+        label_input.image = img_input
+        #Display image
+        label_input.place(relx = 0.33, rely = 0.35)
+        reprints = 0
+        
+def camerafunc():
+    main_cam()
 
 def insimg(label_chosen):
     #Insert image
-    filename = filedialog.askopenfilename(filetypes=[("Image Files", '.png .jpeg')])
+    filename = filedialog.askopenfilename(filetypes=[("Image Files", '.png .jpeg .jpg')])
     print('Selected:', filename)
     
     #Chosen file label
@@ -55,12 +86,30 @@ def insimg(label_chosen):
     label.image = img_input
     #Display image
     label.place(relx = 0.33, rely = 0.35)
+    Eigenface.RecognizeFace(filename, eigenface, koefTrain, mean, initImage)
+    clsImg = '../test/Gambar Uji/closestImg.jpg'
+    resimg = Image.open(clsImg)
+    res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
+    img_res = ImageTk.PhotoImage(res)
+    
+    label_result = tk.Label(window, image=img_res)
+    label_result.image = img_res
+    label_result.place(relx = 0.63, rely= 0.35)
 
 def dataimg(label_1):
+    global eigenface
+    global koefTrain
+    global mean
+    global initImage
+    global imgVectorMatrix
     file = filedialog.askdirectory(parent=window, title='Open 1st file')
     print('Dataset: ', file)
     label_1 = tk.Label(window, text= file, wraplength=135, font=("Arial", 8),fg='#525252', bg='#ffffff', justify='left')
     label_1.place(relx = 0.173, rely = 0.400)
+    imgVectorMatrix, initImage = Eigenface.InputFace(file)
+    mean, eigenface, koefTrain = Eigenface.EigenFace(imgVectorMatrix, 'QRBuiltIn')
+    
+    
     #time
     #start = time.time()
     #minute = start//60
@@ -70,7 +119,7 @@ def dataimg(label_1):
 
 
 #main
-transparent = tk.PhotoImage(file='src/GUI/images/transparent.png')
+transparent = tk.PhotoImage(file='./images/transparent.png')
 # **** TITLE ******
 #title - Face recognition
 title_label = tk.Label(window, text="Face Recognition", font = ("Lucida Handwriting", 20, "bold"), fg='#ffffff', bg='#100000')
@@ -103,9 +152,8 @@ label_dataset = tk.Label(window, text= "Insert Your Dataset", font=("Papyrus", 1
 label_dataset.place(relx=0.1, rely=0.331)
 #choose file button - Insert Your Dataset
 #img_b = tk.PhotoImage(file="./gui/images/choose_file_button.PNG")
-img_b = tk.PhotoImage(file="src/GUI/images/choose_file_button.PNG")
-dataset_button = tk.Button(window, command= lambda:dataimg(dataset_info), image=img_b, fg="blue", pady=20, padx=3, borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
-dataset_button.configure(fg ="white")
+img_b = tk.PhotoImage(file="./images/choose_file_button.PNG")
+dataset_button = tk.Button(window, command= lambda:dataimg(dataset_info), image=img_b, fg="white", pady=20, padx=3, borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 dataset_button.place(relx = 0.095, rely = 0.4)
 
 #choosen file - Insert Your Dataset
@@ -129,8 +177,8 @@ image_info.place(relx = 0.175, rely = 0.596)
 #Image background - title
 testimg_canvas = tk.Canvas(window, width=74, height=27, borderwidth=2, border=2, bg='#FFAA33', highlightbackground="black", highlightthickness=2)
 testimg_canvas.place(relx=0.328, rely = 0.285)
-label_testimg = tk.Label(window, text= "Test Image", bg='#FFAA33', font=("Comic Sans MS", 10), fg="#ffffff", highlightcolor="black", border=2, highlightthickness=2, borderwidth=2,)
-label_testimg.place(relx= 0.33, rely= 0.29)
+label_testimg = tk.Label(window, text= "Test Image", bg='#FFAA33', font=("Comic Sans MS", 10), fg="#ffffff", highlightcolor="black", border=2, highlightthickness=0, borderwidth=2,)
+label_testimg.place(relx= 0.331, rely= 0.29)
 
 #Result - title
 insimg_canvas = tk.Canvas(window, width=235, height=20, borderwidth=5, border=5, bg="#FFAA33", highlightbackground="black", highlightthickness=4)
@@ -142,12 +190,14 @@ label_result_title.place(relx=0.1, rely=0.696)
 #Result - the result
 label_result_dir = tk.Label(window, text='None', font=("Arial", 10), fg='#FFAA33', bg='#ffffff')
 label_result_dir.place(relx=0.125, rely=0.76)
+
+
 #black canvas
 blank_canvas = tk.Canvas(window, width=235, height=20, borderwidth=5, border=5, bg="#FFAA33", highlightbackground="black", highlightthickness=4)
 blank_canvas.place(relx=0.075, rely=0.85)
 #Imageless image directory
 #insbg = Image.open("./gui/images/imageless.PNG")
-insbg = Image.open("src/GUI/images/imageless.PNG")
+insbg = Image.open("./images/imageless.PNG")
 resize_insbg = insbg.resize((256, 256), Image.Resampling.LANCZOS)
 img_inputless = ImageTk.PhotoImage(resize_insbg)
 
@@ -159,15 +209,28 @@ label_insbg.place(relx = 0.33, rely= 0.35)
 cr_canvas = tk.Canvas(window, width=86, height=27, borderwidth=2, border=2, bg='#FFAA33', highlightbackground="black", highlightthickness=2)
 cr_canvas.place(relx=0.628, rely = 0.285)
 label_testimg = tk.Label(window, text= "Closest Result", bg='#FFAA33', font=("Comic Sans MS", 10), fg="#ffffff")
-label_testimg.place(relx= 0.63, rely= 0.295)
+label_testimg.place(relx= 0.63, rely= 0.29)
 
 #Closest Result background
 label_crbg = tk.Label(window, image=img_inputless, bg='#ffffff', borderwidth=0)
 label_crbg.place(relx = 0.63, rely= 0.35)
 
 #Execution canvas
-execution_canvas = tk.Canvas(width=573, height=65, borderwidth=4, border=4, highlightthickness=4, highlightbackground="#ffffff", bg='#100000')
+execution_canvas = tk.Canvas(width=501, height=65, borderwidth=4, border=4, highlightthickness=4, highlightbackground="#ffffff", bg='#100000')
 execution_canvas.place(relx = 0.33, rely = 0.83)
+
+camera_canvas = tk.Canvas(width=130, height = 65, borderwidth=4, border= 4, highlightthickness=4, highlightbackground='#000000', bg = '#ffffff')
+camera_canvas.place(relx = 0.82, rely = 0.83)
+camera_canvas2 = tk.Canvas(width=60, height = 65, borderwidth=4, border= 4, highlightthickness=4, highlightbackground='#000000', bg = '#ffffff')
+camera_canvas2.place(relx = 0.82, rely = 0.83)
+# Camera Button
+#camera img
+img_cam = tk.PhotoImage(file='./images/camerabutton.png')
+cam_button_image = tk.Button(window, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
+cam_button_image.place(relx = 0.835, rely = 0.855)
+
+cam_button_dataset = tk.Button(window, command=main_cam, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
+cam_button_dataset.place(relx = 0.9, rely = 0.855)
 #Execution time - title
 label_execution_title = tk.Label(window, text="Execution time: ", font=("Roman", 11, "bold"), fg="#FFAA33", bg="#100000")
 label_execution_title.place(relx = 0.335, rely = 0.836)
