@@ -103,7 +103,7 @@ def Tridiagonalize(mtrx) :
 
     # ALGORITMA
     n = len(mtrx)
-    m = np.copy(mtrx)
+    m = np.array(mtrx,dtype=np.float64)
     Q = np.eye(n)
     if (n > 2) :
         for i in range(n-2) :
@@ -113,9 +113,61 @@ def Tridiagonalize(mtrx) :
             Q = HH @ Q
     for i in range(len(m)) :
         for j in range(len(m[i])) :
-            if (abs(m[i][j]) < 1e-6) :
+            if (abs(i-j) > 1) :
                 m[i][j] = 0
     return m,Q
+
+def GivensRotation(a,b) :
+    # Mencari matriks rotasi givens berukuran 2x2 
+    # Sumber : https://en.wikipedia.org/wiki/Givens_rotation#Stable_calculation
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    # Kalkulasi nilai c,s dan r untuk givens rotation
+    result = np.zeros((2,2),dtype=np.float64)
+    if (b == 0) :
+        c = np.sign(a)
+        if (c == 0) :
+            c = 1.0
+        s = 0
+        r = abs(a)
+    elif (a == 0) :
+        c = 0
+        s = np.sign(b)
+        r = abs(b)
+    elif (abs(a) > abs(b)) :
+        t = b/a
+        u = np.sign(a)*math.sqrt(1+t*t)
+        c = 1/u
+        s = c*t
+        r = a*u
+    else :
+        t = a/b
+        u = np.sign(b)*math.sqrt(1+t*t)
+        s = 1/u
+        c = s*t
+        r = b*u
+    result[0][0] = c
+    result[1][1] = c
+    result[1][0] = -s
+    result[0][1] = s
+    return result
+
+def QRDecompTridiag(mtrx) :
+    # Menghasilkan dekomposisi QR dari matriks tridiagonal/Hessenberg atas mtrx
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    mK = np.array(mtrx,dtype=np.float64)
+    n = len(mK)
+    Q = np.eye(n,dtype=np.float64)
+    for i in range(n-1) :
+        givens = np.eye(n)
+        givens[i:i+2,i:i+2] = GivensRotation(mK[i][i],mK[i+1][i])
+        mK = givens @ mK
+        mK[i+1][i] = 0
+        Q = Q @ givens.T
+    return Q,mK
 
 def QRDecomp(mtrx) :
     # Memberikan hasil dekomposisi QR dari matriks mtrx
@@ -141,44 +193,44 @@ def QRDecomp(mtrx) :
         Q = Q @ HH
     return Q,R
 
-def qr_gs_modsr(A, type=np.float64):
+# def qr_gs_modsr(A, type=np.float64):
     
-    A = np.array(A, dtype=type)
+#     A = np.array(A, dtype=type)
     
-    (m,n) = np.shape(A) # Get matrix A's shape m - # of rows, m - # of columns
+#     (m,n) = np.shape(A) # Get matrix A's shape m - # of rows, m - # of columns
    
-    # Q - an orthogonal matrix of m-column vectors
-    # R - an upper triangular matrix (the Gaussian elimination of A to the row-echelon form)
+#     # Q - an orthogonal matrix of m-column vectors
+#     # R - an upper triangular matrix (the Gaussian elimination of A to the row-echelon form)
     
-    # Initialization: [ Q - multivector Q = A of shape (m x n) ]
-    #                 [ R - multivector of shape (n x n)       ]
+#     # Initialization: [ Q - multivector Q = A of shape (m x n) ]
+#     #                 [ R - multivector of shape (n x n)       ]
 
-    Q = np.array(A, dtype=type)      # Q - matrix A
-    R = np.zeros((n, n), dtype=type) # R - matrix of 0's    
+#     Q = np.array(A, dtype=type)      # Q - matrix A
+#     R = np.zeros((n, n), dtype=type) # R - matrix of 0's    
 
-    # **** Objective: ****
+#     # **** Objective: ****
 
-    # For each column vector r[k] in R:
-       # Compute r[k,i] element in R, k-th column q[k] in Q;
+#     # For each column vector r[k] in R:
+#        # Compute r[k,i] element in R, k-th column q[k] in Q;
 
-    for k in range(n):
-        # For a span of the previous column vectors q[0..k] in Q, 
-        # compute the R[i,k] element in R as the inner product of vectors q[i] and q[k],
-        # compute k-th column vector q[k] as the product of scalar R[i,k] and i-th vector q[i],
-        # subtracting it from the k-th column vector q[k] in Q
-        for i in range(k):
+#     for k in range(n):
+#         # For a span of the previous column vectors q[0..k] in Q, 
+#         # compute the R[i,k] element in R as the inner product of vectors q[i] and q[k],
+#         # compute k-th column vector q[k] as the product of scalar R[i,k] and i-th vector q[i],
+#         # subtracting it from the k-th column vector q[k] in Q
+#         for i in range(k):
 
-            # **** Compute k-th column q[k] of Q and k-th row r[k] of R **** 
-            R[i,k] = np.transpose(Q[:,i]).dot(Q[:,k])
-            Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
+#             # **** Compute k-th column q[k] of Q and k-th row r[k] of R **** 
+#             R[i,k] = np.transpose(Q[:,i]).dot(Q[:,k])
+#             Q[:,k] = Q[:,k] - R[i,k] * Q[:,i]
             
-        # Compute the r[k,k] pseudo-diagonal element in R 
-        # as the Euclidean norm of the k-th vector q[k] in Q,
+#         # Compute the r[k,k] pseudo-diagonal element in R 
+#         # as the Euclidean norm of the k-th vector q[k] in Q,
 
-        # Normalize the k-th vector q[k] in Q, dividing it by the norm r[k,k]
-        R[k,k] = np.linalg.norm(Q[:,k]); Q[:,k] = Q[:,k] / R[k,k]
+#         # Normalize the k-th vector q[k] in Q, dividing it by the norm r[k,k]
+#         R[k,k] = np.linalg.norm(Q[:,k]); Q[:,k] = Q[:,k] / R[k,k]
     
-    return -Q, -R  # Return the resultant negative matrices Q and R 
+#     return -Q, -R  # Return the resultant negative matrices Q and R 
 
     # KAMUS LOKAL LAMA
     # i, j, dotProduct : integer
@@ -260,34 +312,31 @@ def QR_EigValue(mtrx, iteration=10000) :
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
     # KAMUS LOKAL 
     # n : integer
-    # i : integerw
+    # i : integer
     
     # ALGORITMA
     # Ditambahin cek waktu
     startTime = time.time()
     n = len(mtrx)
-    H,HQ = Tridiagonalize(mtrx)
+    # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
+    H, HQ = Tridiagonalize(mtrx)
     mK = H
-    I = np.eye(n)
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
     for i in range(iteration) :
         s = mK[n-1][n-1]
-        smult = s * I
-        Q,R = qr_gs_modsr(np.subtract(mK,smult))
-        # Q,R = QRDecomp(np.subtract(mK,smult))
-        # startQR = time.time()
+        smult = np.eye(n) * s
+        Q,R = QRDecompTridiag(np.subtract(mK,smult))
         # Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
-        # endQR = time.time()
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
         if (i % 1000 == 0) :
             print("Iterasi", i+1)
         if (isUpperTriangular(mK)) :
             break
-    QTdotQ = HQ @ QTdotQ
+    QTdotQ = HQ.T @ QTdotQ
     # Waktu akhir
     endTime = time.time()
-    print("QR execution time : ", endTime-startTime)
+    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 # def QREigVector(mtrx, eigValues) :
@@ -428,13 +477,15 @@ def rayleigh_iteration(mtrx):
     return (eigValues, eigVectors.T)
 
 
-test = np.random.randint(0, 255, (100,100))
+test = np.random.randint(0, 255, (150,150))
 test = np.dot(test, test.T)
 print(test)
 # Test tridiagonalisasi
 # test = [[4,1,-2,2],[1,2,0,1],[-2,0,3,-2],[2,1,-2,-1]]
+# print(test)
 # tSendiri, HQ = Tridiagonalize(test)
 # print(tSendiri)
+# print(HQ.T @ tSendiri @ HQ)
 
 # test = np.array([[ 56823, 68023, 85245, 91181, 37667],
 #  [ 68023, 8820, 10390, 105639, 48333],
@@ -459,36 +510,36 @@ print(test)
 # print(M)
 # print(QQ)
 
-# # QR
-# QRVal, QRVec = QR_EigValue(test)
-# # Rayleigh
-# value, vector = rayleigh_iteration(test)
-# # Built in
-# BuiltinValue, BuiltinVector = np.linalg.eig(test)
+# QR
+QRVal, QRVec = QR_EigValue(test)
+# Rayleigh
+value, vector = rayleigh_iteration(test)
+# Built in
+BuiltinValue, BuiltinVector = np.linalg.eig(test)
 
-# eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-# sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
-# sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
+eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
+sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
 
-# eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-# sorted_eigValRayleigh = value[eigSortIdxRayleigh]
-# sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
+eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigValRayleigh = value[eigSortIdxRayleigh]
+sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
 
-# eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-# sorted_eigValQR = QRVal[eigSortIdxQR]
-# sorted_eigVectQR = QRVec[:,eigSortIdxQR]
+eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+sorted_eigValQR = QRVal[eigSortIdxQR]
+sorted_eigVectQR = QRVec[:,eigSortIdxQR]
 
-# print("QR")
-# print(sorted_eigValQR)
-# print(sorted_eigVectQR)
-# print()
-# print("Rayleigh")
-# print(sorted_eigValRayleigh)
-# print(sorted_eigVectRayleigh)
-# print()
-# print("Built in")
-# print(sorted_eigValBuiltIn)
-# print(sorted_eigVectBuiltIn)
+print("QR")
+print(sorted_eigValQR)
+print(sorted_eigVectQR)
+print()
+print("Rayleigh")
+print(sorted_eigValRayleigh)
+print(sorted_eigVectRayleigh)
+print()
+print("Built in")
+print(sorted_eigValBuiltIn)
+print(sorted_eigVectBuiltIn)
 
 # Pake power iteration (salah)
 # kLargestEigVector =[]
@@ -510,14 +561,15 @@ print(test)
 # HH = HouseHolder(test)
 # print(HH)
 
-# Test QR decomp Householder
-startTime = time.time()
-Q,R = qr_gs_modsr(test)
-endTime = time.time()
-print(endTime-startTime)
-startTime = time.time()
-QBuilt,RBuilt = np.linalg.qr(test)
-endTime = time.time()
-print(endTime-startTime)
-print(Q,R)
-print(QBuilt,RBuilt)
+# Test QR decomp Givens
+# test, HQ = Tridiagonalize(test)
+# startTime = time.time()
+# Q,R = QRDecompTridiag(test)
+# endTime = time.time()
+# print(endTime-startTime)
+# startTime = time.time()
+# QBuilt,RBuilt = np.linalg.qr(test)
+# endTime = time.time()
+# print(endTime-startTime)
+# print(Q,R)
+# print(QBuilt,RBuilt)

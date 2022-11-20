@@ -1,4 +1,4 @@
-# Tugas Besar 2 - Aljabar Linear dan Geometri
+# Face Recognition with EigenFace Algorithm
 > Source Code ini dibuat oleh kami, Kelompok 11, untuk memenuhi Tugas Besar 2 - Aljabar Linear dan Geometri IF2123 yaitu mengimplementasikan 
 > Aplikasi Nilai Eigen dan EigenFace pada Pengenalan Wajah (Face Recognition)
 
