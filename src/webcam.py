@@ -1,7 +1,7 @@
 import cv2
 import schedule
 import Eigenface
-
+    
 def main_webcam():
     cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
 
@@ -16,7 +16,7 @@ def main_webcam():
 
     # Proses dataset 
     imgVectorMtrx, initImage = Eigenface.InputFace('../test/Face_Cam_Data')
-    mean, eigenFace, coefTrain, execTime = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
+    mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
 
     while True:
         ret, frame = cam.read()

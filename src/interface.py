@@ -4,6 +4,7 @@ from PIL import ImageTk, Image
 import time
 import cv2
 from camRecord import main_cam
+from webcam import main_webcam
 import Eigenface
 sett = time.time()
 stop = 0
@@ -93,6 +94,49 @@ def insimg(image_info):
     #Insert image
     filename = filedialog.askopenfilename(filetypes=[("Image Files", '.png .jpeg .jpg')])
     print('Selected:', filename)
+    
+    #Chosen file label
+    image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
+    image_info.place(relx = 0.173, rely = 0.575)
+    #Open Image
+    theimg = Image.open(filename)
+    #Resize Image
+    resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
+    #Framing Image
+    img_input = ImageTk.PhotoImage(resize_img)
+    #Creating image
+    label = tk.Label(window, image = img_input)
+    label.image = img_input
+    #Display image
+    label.place(relx = 0.33, rely = 0.35)
+    mulai = time.time()
+    Eigenface.RecognizeFace(filename, eigenface, koefTrain, mean, initImage)
+    selesai = time.time()
+    now = selesai-mulai
+    hour = int(now//3600)
+    minute = int(now//60)
+    second = int(now%60)
+    milisec = float(now%1)*100000
+    if (milisec/100000 < 0.1):
+        label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.0{milisec:.0f}")
+    else:
+        label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
+    label_execution_time.place(relx=0.435, rely= 0.836)
+    clsImg = '../test/Gambar Uji/closestImg.jpg'
+    resimg = Image.open(clsImg)
+    res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
+    img_res = ImageTk.PhotoImage(res)
+    
+    label_result = tk.Label(window, image=img_res)
+    label_result.image = img_res
+    label_result.place(relx = 0.63, rely= 0.35)
+    damn = time.time()
+    
+def reupdate(image_info):
+    global hour, minute, second, milisec, stop
+    stop = 0
+    #Insert image
+    filename = 'image_webcam.jpg'
     
     #Chosen file label
     image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
@@ -272,7 +316,7 @@ camera_canvas2.place(relx = 0.82, rely = 0.83)
 # Camera Button
 #camera img
 img_cam = tk.PhotoImage(file='./images/camerabutton.png')
-cam_button_image = tk.Button(window, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
+cam_button_image = tk.Button(window, command=lambda:[main_webcam(),reupdate(image_info)], image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 cam_button_image.place(relx = 0.835, rely = 0.855)
 
 cam_button_dataset = tk.Button(window, command=main_cam, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
