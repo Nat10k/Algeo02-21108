@@ -117,6 +117,58 @@ def Tridiagonalize(mtrx) :
                 m[i][j] = 0
     return m,Q
 
+def GivensRotation(a,b) :
+    # Mencari matriks rotasi givens berukuran 2x2 
+    # Sumber : https://en.wikipedia.org/wiki/Givens_rotation#Stable_calculation
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    # Kalkulasi nilai c,s dan r untuk givens rotation
+    result = np.zeros((2,2),dtype=np.float64)
+    if (b == 0) :
+        c = np.sign(a)
+        if (c == 0) :
+            c = 1.0
+        s = 0
+        r = abs(a)
+    elif (a == 0) :
+        c = 0
+        s = np.sign(b)
+        r = abs(b)
+    elif (abs(a) > abs(b)) :
+        t = b/a
+        u = np.sign(a)*math.sqrt(1+t*t)
+        c = 1/u
+        s = c*t
+        r = a*u
+    else :
+        t = a/b
+        u = np.sign(b)*math.sqrt(1+t*t)
+        s = 1/u
+        c = s*t
+        r = b*u
+    result[0][0] = c
+    result[1][1] = c
+    result[1][0] = -s
+    result[0][1] = s
+    return result
+
+def QRDecompTridiag(mtrx) :
+    # Menghasilkan dekomposisi QR dari matriks tridiagonal/Hessenberg atas mtrx
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    mK = np.array(mtrx,dtype=np.float64)
+    n = len(mK)
+    Q = np.eye(n,dtype=np.float64)
+    for i in range(n-1) :
+        givens = np.eye(n)
+        givens[i:i+2,i:i+2] = GivensRotation(mK[i][i],mK[i+1][i])
+        mK = givens @ mK
+        mK[i+1][i] = 0
+        Q = Q @ givens.T
+    return Q,mK
+
 def QRDecomp(mtrx) :
     # Memberikan hasil dekomposisi QR dari matriks mtrx
     # Sumber : https://www.ibm.com/docs/en/essl/6.2?topic=llss-sgeqrf-dgeqrf-cgeqrf-zgeqrf-general-matrix-qr-factorization
@@ -273,7 +325,8 @@ def QR_EigValue(mtrx, iteration=10000) :
     for i in range(iteration) :
         s = mK[n-1][n-1]
         smult = np.eye(n) * s
-        Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
+        Q,R = QRDecompTridiag(np.subtract(mK,smult))
+        # Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
         if (i % 1000 == 0) :
@@ -424,7 +477,7 @@ def rayleigh_iteration(mtrx):
     return (eigValues, eigVectors.T)
 
 
-test = np.random.randint(0, 255, (5,5))
+test = np.random.randint(0, 255, (150,150))
 test = np.dot(test, test.T)
 print(test)
 # Test tridiagonalisasi
@@ -508,9 +561,10 @@ print(sorted_eigVectBuiltIn)
 # HH = HouseHolder(test)
 # print(HH)
 
-# Test QR decomp Householder
+# Test QR decomp Givens
+# test, HQ = Tridiagonalize(test)
 # startTime = time.time()
-# Q,R = qr_gs_modsr(test)
+# Q,R = QRDecompTridiag(test)
 # endTime = time.time()
 # print(endTime-startTime)
 # startTime = time.time()

@@ -5,6 +5,19 @@ import math
 import scipy
 import time
 
+def vectorLength(v) :
+    # Menghitung panjang vektor v
+    # KAMUS LOKAL
+    # length : integer
+    # i : integer
+
+    # ALGORITMA 
+    length = 0
+    for i in range(len(v)) :
+        length += pow(v[i],2)
+    length = math.sqrt(length)
+    return length
+
 def vectorToImg(v, row,col) :
     # Mengubah vektor v menjadi grid pixel gambar berukuran row x col
     # KAMUS LOKAL
@@ -34,7 +47,7 @@ def HouseHolder(vec) :
     # KAMUS LOKAL
 
     # ALGORITMA
-    normx = np.linalg.norm(vec)
+    normx = vectorLength(vec)
     if (normx < 1e-5) :
         H = np.eye(len(vec))
         return H
@@ -66,29 +79,57 @@ def Tridiagonalize(mtrx) :
                 m[i][j] = 0
     return m,Q
 
-def QRDecomp(mtrx) :
-    # Memberikan hasil dekomposisi QR dari matriks mtrx
-    # Sumber : https://www.ibm.com/docs/en/essl/6.2?topic=llss-sgeqrf-dgeqrf-cgeqrf-zgeqrf-general-matrix-qr-factorization
-    #          https://www.r-bloggers.com/2017/04/qr-decomposition-with-householder-reflections/#:~:text=QR%20Decomposition%20with%20Householder%20Reflections%20The%20Householder%20reflection,A%20to%20construct%20the%20upper%20triangular%20matrix%20R.
-    #          https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+def GivensRotation(a,b) :
+    # Mencari matriks rotasi givens berukuran 2x2 
+    # Sumber : https://en.wikipedia.org/wiki/Givens_rotation#Stable_calculation
     # KAMUS LOKAL
-    # i,k : integer
-    # Q, R : array of array of integer
-    # u : array of integer
-    
-    # ALGORITMA
-    rows, cols = mtrx.shape
-    Q = np.eye(rows)
-    R = np.copy(mtrx)
 
-    for i in range(cols) :
-        HH = np.eye(cols)
-        HH[i:,i:] = HouseHolder(R[i:,i])
-        R = np.dot(HH,R)
-        if (i<rows-1) :
-            R[i+1:,i] = 0
-        Q = np.dot(Q,HH)
-    return Q,R
+    # ALGORITMA
+    # Kalkulasi nilai c,s dan r untuk givens rotation
+    result = np.zeros((2,2),dtype=np.float64)
+    if (b == 0) :
+        c = np.sign(a)
+        if (c == 0) :
+            c = 1.0
+        s = 0
+        r = abs(a)
+    elif (a == 0) :
+        c = 0
+        s = np.sign(b)
+        r = abs(b)
+    elif (abs(a) > abs(b)) :
+        t = b/a
+        u = np.sign(a)*math.sqrt(1+t*t)
+        c = 1/u
+        s = c*t
+        r = a*u
+    else :
+        t = a/b
+        u = np.sign(b)*math.sqrt(1+t*t)
+        s = 1/u
+        c = s*t
+        r = b*u
+    result[0][0] = c
+    result[1][1] = c
+    result[1][0] = -s
+    result[0][1] = s
+    return result
+
+def QRDecompTridiag(mtrx) :
+    # Menghasilkan dekomposisi QR dari matriks tridiagonal/Hessenberg atas mtrx
+    # KAMUS LOKAL
+
+    # ALGORITMA
+    mK = np.array(mtrx,dtype=np.float64)
+    n = len(mK)
+    Q = np.eye(n,dtype=np.float64)
+    for i in range(n-1) :
+        givens = np.eye(n)
+        givens[i:i+2,i:i+2] = GivensRotation(mK[i][i],mK[i+1][i])
+        mK = givens @ mK
+        mK[i+1][i] = 0
+        Q = Q @ givens.T
+    return Q,mK
 
 def QREigenSendiri(mtrx, iteration=5000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
@@ -100,7 +141,6 @@ def QREigenSendiri(mtrx, iteration=5000) :
     
     # ALGORITMA
     # Ditambahin cek waktu
-    startTime = time.time()
     n = len(mtrx)
     H, HQ = Tridiagonalize(mtrx)
     mK = H
@@ -108,17 +148,12 @@ def QREigenSendiri(mtrx, iteration=5000) :
     for i in range(iteration) :
         s = mK[n-1][n-1]
         smult = np.eye(n) * s
-        Q,R = QRDecomp(np.subtract(mK,smult))
+        Q,R = QRDecompTridiag(np.subtract(mK,smult))
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
-        if (i % 1000 == 0) :
-            print("Iterasi", i+1)
         if (isUpperTriangular(mK)) :
             break
-    QTdotQ = HQ @ QTdotQ
-    # Waktu akhir
-    endTime = time.time()
-    print("Waktu eksekusi QR : ", endTime-startTime)
+    QTdotQ = HQ.T @ QTdotQ
     return np.diag(mK), QTdotQ
 
 def QREigenBuiltIn(mtrx, iteration=5000) :
@@ -131,7 +166,6 @@ def QREigenBuiltIn(mtrx, iteration=5000) :
     
     # ALGORITMA
     # Ditambahin cek waktu
-    startTime = time.time()
     n = len(mtrx)
     # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
     H, HQ = Tridiagonalize(mtrx)
@@ -143,14 +177,9 @@ def QREigenBuiltIn(mtrx, iteration=5000) :
         Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
         mK = np.add(R @ Q, smult)
         QTdotQ = QTdotQ @ Q
-        if (i % 1000 == 0) :
-            print("Iterasi", i+1)
         if (isUpperTriangular(mK)) :
             break
     QTdotQ = HQ.T @ QTdotQ
-    # Waktu akhir
-    endTime = time.time()
-    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 def rayleigh_iteration(mtrx):
@@ -163,18 +192,18 @@ def rayleigh_iteration(mtrx):
     eigValues = np.empty(n)
     I = np.eye(n)
     v = np.random.randn(n) # Vektor tebakan acak
-    v /= np.linalg.norm(v)
+    v /= vectorLength(v)
     for i in range(n) :
         v = np.random.randn(n) # Vektor tebakan acak
         if i > 0 :
             for k in range(len(eigVectors)) :
                 v -= np.dot(v,eigVectors[k]) * eigVectors[k] # Cari vektor yang ortogonal dengan eigenvector sebelumnya
-        v /= np.linalg.norm(v) # Normalisasi vektor
+        v /= vectorLength(v) # Normalisasi vektor
         mu = np.dot(v, np.dot(mtrx, v))
         for t in range(max_iter):
             try :
                 v = np.linalg.inv(mu * I - mtrx) @ v # Selesaikan SPL (mu * I - mtrx) dengan v
-                v /= np.linalg.norm(v)
+                v /= vectorLength(v)
                 mu = np.dot(v, np.dot(mtrx, v)) # Hitung Rayleigh Quotient
             except :
                 break
@@ -248,7 +277,7 @@ def EigenFace(imgVectorMatrix, method) :
     # Membuat eigenface dan mengurutkannya
     eigenFace = np.transpose(np.dot(mImgTrans, eigVector))
     for i in range(len(eigenFace)) : # Normalisasi eigenface supaya hasil perhitungan jarak tidak terlalu besar
-        eigenFace[i] /= np.linalg.norm(eigenFace[i])
+        eigenFace[i] /= vectorLength(eigenFace[i])
 
     eigSortIdx = eigValue.argsort()[::-1]
     sorted_eigVal = eigValue[eigSortIdx]
@@ -274,8 +303,8 @@ def EigenFace(imgVectorMatrix, method) :
         coefTrain.append(coefI)
     end = time.time()
     execTime = end-start
-    print("Waktu eksekusi : ", execTime)
-    return mean, largest_eigenFace, coefTrain, execTime
+    print("Waktu eksekusi :", execTime)
+    return mean, largest_eigenFace, coefTrain
 
 def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     # Melakukan pengenalan wajah berdasarkan data eigenFace, mean, dan coefTrain yang ada
@@ -316,14 +345,14 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     if (min_dist > 1e4) :
         print("Wajah tidak ada di database")
     else :
-        cv2.imwrite('closestImg.jpg', initImage[idx])
+        cv2.imwrite('./test/Gambar Uji/closestImg.jpg', initImage[idx])
     end = time.time()
     print("Waktu pengenalan wajah :", end-start)
 
-""" imgVectorMtrx, initImage = InputFace('./test/Dataset')
-mean, eigenFace, coefTrain, execTime = EigenFace(imgVectorMtrx, 'QRBuiltIn')
+imgVectorMtrx, initImage = InputFace('./test/Dataset')
+mean, eigenFace, coefTrain = EigenFace(imgVectorMtrx, 'QRBuiltIn')
 decision = input()
 while (decision != 'EXIT') :
     if (decision == 'R') :
         RecognizeFace('./testImg.jpg', eigenFace, coefTrain, mean, initImage)
-    decision = input() """
+    decision = input()
