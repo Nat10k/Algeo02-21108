@@ -34,9 +34,7 @@ def stopwebcam():
 
 def main_webcams():
     global new_button, stoploop, cam, threadReupdate, threadCapture, file
-    print("I was here")
     stoploop = 0
-    print(stoploop)
     new_button = tk.Button(window, text="Stop", command=stopwebcam, font=("Courier New", 12), fg = 'orange', bg = 'black', highlightthickness=3, highlightbackground='black')
     new_button.place(relx= 0.51, rely= 0.285)
     cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
