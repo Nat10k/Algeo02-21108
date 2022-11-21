@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 import glob
 import math
-import scipy
-import time
 
 def vectorLength(v) :
     # Menghitung panjang vektor v
@@ -344,26 +342,21 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     idx = 0
 
     # Hitung kedekatan wajah dengan dataset berdasarkan Euclidean Distance
-    avgDistance = 0
     for i in range (len(coefTrain)) :
         distance = 0
         for j in range(len(coefTrain[i])) :
-            if (j == 0) :
-                distance = math.pow(coefTrain[i][j] - coefTest[j],2)
-            else :
-                distance += math.pow(coefTrain[i][j] - coefTest[j],2)
+            distance += math.pow(coefTrain[i][j] - coefTest[j],2)
         distance = math.sqrt(distance)
-        avgDistance += distance
         if (i == 0) :
             min_dist = distance
         else :
             if (distance < min_dist) :
                 min_dist = distance
                 idx = i
-    avgDistance /= len(coefTrain)
-    print(avgDistance)
     print(min_dist)
     if(min_dist > 2e4) :
         print("Wajah tidak ada di database")
+        return False
     else :
         cv2.imwrite('../test/Gambar Uji/closestImg.jpg', initImage[idx])
+        return True
