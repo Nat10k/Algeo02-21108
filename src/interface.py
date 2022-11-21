@@ -54,19 +54,32 @@ global label_result
    # tes = main_webcam()
    # while (tes):
     #    reprint(1)
+stoploop = 0
+def stopwebcam():
+    global stoploop#, #threadReupdate, threadCapture
+    stoploop = 1
+    new_button.place_forget() 
 
 def main_webcams():
-    
+    global new_button, stoploop, cam, threadReupdate, threadCapture, file
+    print("I was here")
+    stoploop = 0
+    print(stoploop)
+    new_button = tk.Button(window, text="Stop", command=stopwebcam, font=("Courier New", 12), fg = 'orange', bg = 'black', highlightthickness=3, highlightbackground='black')
+    new_button.place(relx= 0.51, rely= 0.285)
     cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
 
     def capture():
-        print("Screenshot taken")
-        start = time.time()
-        Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
-        end = time.time()
-        reupdateResult(start,end)
-        time.sleep(10)
-        capture()
+        if stoploop == 0:
+            print("Screenshot taken")
+            start = time.time()
+            Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
+            end = time.time()
+            reupdateResult(start,end)
+            time.sleep(10)
+            capture()
+        else:
+            return
     
     def reupdateResult(mulai,selesai) :
         now = selesai-mulai
@@ -92,43 +105,45 @@ def main_webcams():
 
     def reupdate():
         global hour, minute, second, milisec, stop
-        stop = 0
-        
-        filename = 'image_webcam.jpg'
-        ret, frame = cam.read()
-        if not ret:
-            print("Failed to take an image")
+        if stoploop == 0:
+            filename = 'image_webcam.jpg'
+            ret, frame = cam.read()
+            if not ret:
+                print("Failed to take an image")
+                return
+            resize = cv2.resize(frame,(256,256))  # resize jadi 256 x 256
+            cv2.imwrite(filename,resize)
+            #Chosen file label
+            image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
+            image_info.place(relx = 0.173, rely = 0.575)
+            #Open Image
+            theimg = Image.open(filename)
+            #Resize Image
+            resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
+            #Framing Image
+            img_input = ImageTk.PhotoImage(resize_img)
+            #Creating image
+            label = tk.Label(window, image = img_input)
+            label.image = img_input
+            #Display image
+            label.place(relx = 0.33, rely = 0.35)
+            time.sleep(0.1)
+            reupdate()
+        else:
+            cam.release()
             return
-        resize = cv2.resize(frame,(256,256))  # resize jadi 256 x 256
-        cv2.imwrite(filename,resize)
-        #Chosen file label
-        image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
-        image_info.place(relx = 0.173, rely = 0.575)
-        #Open Image
-        theimg = Image.open(filename)
-        #Resize Image
-        resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
-        #Framing Image
-        img_input = ImageTk.PhotoImage(resize_img)
-        #Creating image
-        label = tk.Label(window, image = img_input)
-        label.image = img_input
-        #Display image
-        label.place(relx = 0.33, rely = 0.35)
-        time.sleep(0.1)
-        reupdate()
     # Set up schedule before loop
     # schedule.every(5).seconds.do(capture)
     # schedule.every(5).seconds.do(reupdate(image_info)) """
 
     # Proses dataset 
-    imgVectorMtrx, initImage = Eigenface.InputFace('../test/Face_Cam_Data')
+    imgVectorMtrx, initImage = Eigenface.InputFace(file)
     mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
     threadReupdate = threading.Thread(target=reupdate)
     threadCapture = threading.Thread(target=capture)
     threadReupdate.start()
     threadCapture.start()
-
+    # Tutup cam
     """ k = cv2.waitKey(100)  # 1/10 sec delay; no need for separate sleep
 
     if k % 256 == 27 or k == ord('q'):  # Command quit : q
@@ -228,6 +243,7 @@ def dataimg(label_1):
     global initImage
     global imgVectorMatrix
     global hour, minute, second, milisec, stop
+    global file
     file = filedialog.askdirectory(parent=window, title='Open 1st file')
     print('Dataset: ', file)
     label_1 = tk.Label(window, text= file, wraplength=135, font=("Arial", 8),fg='#525252', bg='#ffffff', justify='left')
@@ -384,4 +400,5 @@ label_load_title = tk.Label(window, text="Load Dataset    :", font=("Roman", 11,
 label_load_title.place(relx=0.335, rely = 0.88)
 label_load_time = tk.Label(window, text=f"{hour:02d}:{minute:02d}:{second:02d}", font=("Courier New", 12), bg='#100000', fg='#5aff15')
 label_load_time.place(relx=0.435, rely= 0.88)
+
 window.mainloop()
