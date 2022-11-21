@@ -12,7 +12,7 @@ def main_webcam():
         Eigenface.RecognizeFace('./image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
 
     # Set up schedule before loop
-    schedule.every(10).seconds.do(capture)
+    schedule.every(3).seconds.do(capture)
 
     # Proses dataset 
     imgVectorMtrx, initImage = Eigenface.InputFace('../test/Face_Cam_Data')
