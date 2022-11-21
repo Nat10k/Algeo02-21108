@@ -28,7 +28,7 @@ global label_result
 stoploop = 0
 
 def stopwebcam():
-    global stoploop#, #threadReupdate, threadCapture
+    global stoploop
     stoploop = 1
     new_button.place_forget() 
 
@@ -120,7 +120,7 @@ def main_webcams():
 def camerafunc():
     main_cam()
 
-def insimg(image_info):
+def insimg():
     global hour, minute, second, milisec, stop, label_result_dir
     stop = 0
     #Insert image

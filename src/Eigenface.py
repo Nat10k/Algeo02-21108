@@ -16,29 +16,6 @@ def vectorLength(v) :
     length = math.sqrt(length)
     return length
 
-def vectorToImg(v, row,col) :
-    # Mengubah vektor v menjadi grid pixel gambar berukuran row x col
-    # KAMUS LOKAL
-    # i,j,ctr : integer
-    # imgGrid, img : array of array of int
-    # gridRow : array of int
-
-    # ALGORITMA
-    img = np.asarray(v.reshape(row,col), dtype=np.uint8)
-    return img
-
-def isUpperTriangular(mtrx) :
-    # Mengembalikan True jika mtrx adalah matriks segitiga atas, False jika tidak
-    # KAMUS LOKAL
-    # i,j : integer
-
-    # ALGORITMA 
-    for i in range(1,len(mtrx)) :
-        for j in range(i) :
-            if(abs(mtrx[i][j]) > 1e-3) :
-                return False
-    return True
-
 def HouseHolder(vec) :
     # Menghasilkan reflektor householder berdasarkan vektor vec
     # Sumber : https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
@@ -138,7 +115,7 @@ def WilkinsonShift(a,b,c) :
     delta = (a-c)/2
     return c-(np.sign(delta)*pow(b,2)/(abs(delta)+math.sqrt(pow(delta,2)+pow(b,2))))
 
-def QREigenSendiri(mtrx, iteration=5000) :
+def QREigenSendiri(mtrx) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
@@ -171,7 +148,7 @@ def QREigenSendiri(mtrx, iteration=5000) :
     QTdotQ = HQ.T @ QTdotQ
     return np.diag(mK), QTdotQ
 
-def QREigenBuiltIn(mtrx, iteration=5000) :
+def QREigenBuiltIn(mtrx) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
