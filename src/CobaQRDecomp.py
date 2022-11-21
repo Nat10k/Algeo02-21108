@@ -3,7 +3,6 @@ import math
 import scipy
 import time
 import splitfolders
-import sympy
 
 # Sumber QRDecomp lagi : https://pi.math.cornell.edu/~web6140/TopTenAlgorithms/QRalgorithm.html
 # Sumber Lanczos algorithm : https://en.wikipedia.org/wiki/Lanczos_algorithm#Numerical_stability

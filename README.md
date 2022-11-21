@@ -6,7 +6,9 @@
 * [Anggota Kelompok](#anggota-kelompok)
 * [Implementasi Program](#implementasi-program)
 * [Sistematika File](#sistematika-file)
+* [Requirements](#requirements)
 * [Cara Menjalankan Program](#cara-menjalankan-program)
+* [Screenshots](#screenshots)
 
 ## Anggota Kelompok
 NIM | Nama |
@@ -44,5 +46,38 @@ Pada Tugas Besar kali ini, program yang kami buat dapat digunakan untuk :
 └─── README.md
 ```
 
+## Requirements
+***Libraries***<br />
+* Tkinter<br />
+* Pillow<br />
+* OpenCV<br />
+* Splitfolders<br />
+* Glob<br />
+* Scipy<br />
+* Schedule<br />
+
 ## Cara Menjalankan Program
-< isi disini >
+
+### Menjalankan GUI
+1. Pastikan Python 3 versi terbaru sudah terpasang pada mesin eksekusi (Anda dapat mengecek versi Python 3 dengan menjalankan command `python --version` pada command prompt).
+2. Lakukan pemindahan posisi folder directory ke source code dengan command `cd src`.
+3. Jalankan run pada `interface.py`.
+4. Jika berhasil dikompilasi, maka akan muncul tampilan GUI dan program siap digunakan.
+
+### Melakukan Pencocokan Wajah dengan Eigenface
+1. Masukkan dataset yang ingin dianalisis dengan menekan tombol `Choose File` pada bagian "Insert Your Dataset", Tunggu hingga proses pembacaan dan pengenalan dataset selesai dilakukan.
+2. Masukkan gambar yang ingin dicari kemiripannya dengan menekan tombol `Choose File` pada bagian "Insert Your Image", Jika berhasil maka akan muncul gambar yang ditambahkan pada bagian "Test Image".
+3. Sesaat kemudian akan muncul sebuah wajah dari dalam database yang memiliki kemiripan dari eigenface dengan jarak euclidean terpendek pada bagian "Closest Result" jika gambar yang sesuai ditemukan pada dataset yang dimasukkan.
+
+### Melakukan Perekaman Wajah dan Menjadikannya Dataset
+1. Proses perekaman gambar akan dimulai sesaat setelah Anda menekan tombol `Dataset`.
+2. Tunggu proses perekaman berlangsung dan sebuah database berjumlah 30 gambar akan tersimpan di dalam folder `Face_Cam_Data`.
+
+### Melakukan Perekaman dan Pengenalan Wajah Secara ***Realtime***
+1. Masukkan dataset yang ingin dianalisis dengan menekan tombol `Choose File` pada bagian "Insert Your Dataset", Tunggu hingga proses pembacaan dan pengenalan dataset selesai dilakukan.
+2. Masukkan gambar dengan nama file `image_webcam.jpg` dengan menekan tombol `Choose File` pada bagian "Insert Your Image", Jika berhasil maka akan muncul gambar yang ditambahkan pada bagian "Test Image".
+3. Tekan tombol `Capture` dan sebuah wajah dari dalam database yang memiliki kemiripan dari eigenface dengan jarak euclidean terpendek akan muncul pada bagian "Closest Result".
+4. Proses penghentian pengambilan gambar dapat dilakukan dengan menekan tombol `Stop`.
+
+## Screenshots
+![screenshots](src/images/screenshots.PNG)
