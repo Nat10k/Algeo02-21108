@@ -110,7 +110,7 @@ def main_webcams():
 
     # Proses dataset 
     imgVectorMtrx, initImage = Eigenface.InputFace(file)
-    mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
+    mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'Rayleigh')
     threadReupdate = threading.Thread(target=reupdate)
     threadCapture = threading.Thread(target=capture)
     threadReupdate.start()
