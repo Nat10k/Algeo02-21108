@@ -6,6 +6,7 @@ import cv2
 from camRecord import main_cam
 from webcam import main_webcam
 import Eigenface
+import schedule
 sett = time.time()
 stop = 0
 hour = 0
@@ -50,7 +51,9 @@ window.title("Face Recognition")
    # tes = main_webcam()
    # while (tes):
     #    reprint(1)
-
+def main_webcams(image_info):
+    main_webcam()
+    reupdate(image_info)
 def reprint(val):
     if val == 1:
         #Chosen file label'
@@ -316,7 +319,7 @@ camera_canvas2.place(relx = 0.82, rely = 0.83)
 # Camera Button
 #camera img
 img_cam = tk.PhotoImage(file='./images/camerabutton.png')
-cam_button_image = tk.Button(window, command=lambda:[main_webcam(),reupdate(image_info)], image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
+cam_button_image = tk.Button(window, command=lambda:[main_webcams(image_info)], image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 cam_button_image.place(relx = 0.835, rely = 0.855)
 
 cam_button_dataset = tk.Button(window, command=main_cam, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
