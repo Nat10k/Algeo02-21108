@@ -354,7 +354,7 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
                 min_dist = distance
                 idx = i
     print(min_dist)
-    if(min_dist > 2e4) :
+    if(min_dist > 5e4) :
         print("Wajah tidak ada di database")
         return False
     else :

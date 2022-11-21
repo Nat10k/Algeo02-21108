@@ -1,12 +1,13 @@
 import tkinter as tk
 from tkinter import  filedialog
+from tkinter import NW, Tk, Canvas, PhotoImage
 from PIL import ImageTk, Image
 import time
 import cv2
 from camRecord import main_cam
 from webcam import main_webcam
 import Eigenface
-import schedule
+
 sett = time.time()
 stop = 0
 hour = 0
@@ -22,6 +23,7 @@ window.attributes('-topmost')
 #window.wm_attributes('-transparentcolor', '#ffffff')
 window.resizable(False,False)
 window.title("Face Recognition")
+global label_result
 #window.wm_attributes('-transparentcolor', '#ffffff')
 #window.wm_attributes('-alpha',0.5)
 #background window
@@ -51,9 +53,56 @@ window.title("Face Recognition")
    # tes = main_webcam()
    # while (tes):
     #    reprint(1)
-def main_webcams(image_info):
-    main_webcam()
-    reupdate(image_info)
+
+def main_webcams():
+    """ main_webcam()
+    reupdate(image_info) """
+    def photo_image(img):
+        h, w = img.shape[:2]
+        data = f'P6 {w} {h} 255 '.encode() + img[..., ::-1].tobytes()
+        return PhotoImage(width=w, height=h, data=data, format='PPM')
+    
+    cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
+
+    def capture():
+        ret, frame = cam.read()
+        if not ret:
+            print("Failed to take an image")
+            return
+        
+        resize = cv2.resize(frame,(256,256))  # resize jadi 256 x 256
+        img_name = "image_webcam.jpg"
+        cv2.imwrite(img_name, resize)
+        # await asyncio.sleep(5)
+        reupdate('image_webcam.jpg',)
+        print("Screenshot taken")
+        Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
+        window.after(15,capture)
+        
+    # Set up schedule before loop
+    # schedule.every(5).seconds.do(capture)
+    # schedule.every(5).seconds.do(reupdate(image_info)) """
+
+    # Proses dataset 
+    imgVectorMtrx, initImage = Eigenface.InputFace('../test/Face_Cam_Data')
+    mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
+
+    # cv2.imwrite('image_webcam.jpg',resize)
+    capture()
+    # reupdate(image_info)
+    # asyncio.run(capture())
+    # schedule.run_pending()
+
+    """ k = cv2.waitKey(100)  # 1/10 sec delay; no need for separate sleep
+
+    if k % 256 == 27 or k == ord('q'):  # Command quit : q
+        print("Closing the app")
+        else :
+            asyncio.run(capture())
+
+    cam.release()  # Tutup cam
+    cv2.destroyAllWindows() # Hapus memmory cam agar tidak membebani laptop """
+    
 def reprint(val):
     if val == 1:
         #Chosen file label'
@@ -130,16 +179,15 @@ def insimg(image_info):
     res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
     img_res = ImageTk.PhotoImage(res)
     
+    label_result_dir.configure(text='closestImg.jpg')
+    label_result_dir.place(relx=0.125, rely=0.76)
     label_result = tk.Label(window, image=img_res)
     label_result.image = img_res
     label_result.place(relx = 0.63, rely= 0.35)
-    damn = time.time()
     
-def reupdate(image_info):
+def reupdate(filename):
     global hour, minute, second, milisec, stop
     stop = 0
-    #Insert image
-    filename = 'image_webcam.jpg'
     
     #Chosen file label
     image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
@@ -173,10 +221,11 @@ def reupdate(image_info):
     res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
     img_res = ImageTk.PhotoImage(res)
     
-    label_result = tk.Label(window, image=img_res)
-    label_result.image = img_res
-    label_result.place(relx = 0.63, rely= 0.35)
-    damn = time.time()
+    label_result_dir.configure(text='closestImg.jpg')
+    label_result_dir.place(relx=0.125, rely=0.76)
+    label_crbg.configure(image=img_res)
+    label_crbg.image = img_res
+    label_crbg.place(relx=0.63, rely=0.35)
 
 def dataimg(label_1):
     global eigenface
@@ -319,11 +368,17 @@ camera_canvas2.place(relx = 0.82, rely = 0.83)
 # Camera Button
 #camera img
 img_cam = tk.PhotoImage(file='./images/camerabutton.png')
-cam_button_image = tk.Button(window, command=lambda:[main_webcams(image_info)], image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
+cam_button_image = tk.Button(window, command=main_webcams, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 cam_button_image.place(relx = 0.835, rely = 0.855)
+
+cam_label_image = tk.Label(window, text="Capture",fg = '#000000', bg="#ffffff", font = ("Times New Roman", 11))
+cam_label_image.place(relx=0.831, rely = 0.918)
 
 cam_button_dataset = tk.Button(window, command=main_cam, image=img_cam, fg="white", highlightbackground='white', borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 cam_button_dataset.place(relx = 0.9, rely = 0.855)
+
+cam_label_dataset = tk.Label(window, text="Dataset",fg = '#000000', bg="#ffffff", font = ("Times New Roman", 11))
+cam_label_dataset.place(relx=0.895, rely = 0.918)
 #Execution time - title
 label_execution_title = tk.Label(window, text="Execution time : ", font=("Roman", 11, "bold"), fg="#FFAA33", bg="#100000")
 label_execution_title.place(relx = 0.335, rely = 0.836)
