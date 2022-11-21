@@ -263,15 +263,6 @@ def QRDecomp(mtrx) :
     # Q = np.transpose(QTrans)
     # return (Q,R)
 
-def WilkinsonShift(a,b,c) :
-    # Menghitung wilkinson shift untuk keperluan QR algorithm
-    # KAMUS LOKAL
-    # delta : float
-
-    # ALGORITMA
-    delta = (a-c)/2
-    return c-(np.sign(delta)*pow(b,2)/(abs(delta)+math.sqrt(pow(delta,2)+pow(b,2))))
-
 # def QR_EigValue(mtrx, iteration=10000) :
 #     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
 #     # Sumber : https://pi.math.cornell.edu/~web6140/TopTenAlgorithms/QRalgorithm.html
@@ -306,8 +297,17 @@ def WilkinsonShift(a,b,c) :
 #     print("Waktu eksekusi : ", endTime-startTime)
 #     return np.diag(mK), QTdotQ
 
-def QR_EigValue(mtrx, iteration=10000) :
-    # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
+def WilkinsonShift(a,b,c) :
+    # Menghitung wilkinson shift untuk keperluan QR algorithm
+    # KAMUS LOKAL
+    # delta : float
+
+    # ALGORITMA
+    delta = (a-c)/2
+    return c-(np.sign(delta)*pow(b,2)/(abs(delta)+math.sqrt(pow(delta,2)+pow(b,2))))
+
+def QR_EigValue(mtrx, iteration=5000) :
+    # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition dengan Wilkinson Shift dan deflation. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     #          https://mathoverflow.net/questions/258847/solved-how-to-retrieve-eigenvectors-from-qr-algorithm-that-applies-shifts-and-d
     # KAMUS LOKAL 
@@ -322,17 +322,22 @@ def QR_EigValue(mtrx, iteration=10000) :
     H, HQ = Tridiagonalize(mtrx)
     mK = H
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
-    for i in range(iteration) :
-        s = mK[n-1][n-1]
-        smult = np.eye(n) * s
-        Q,R = QRDecompTridiag(np.subtract(mK,smult))
-        # Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
-        mK = np.add(R @ Q, smult)
-        QTdotQ = QTdotQ @ Q
-        if (i % 1000 == 0) :
-            print("Iterasi", i+1)
-        if (isUpperTriangular(mK)) :
-            break
+    for i in range(n-1,0,-1) :
+        iterQ = np.eye(i+1)
+        while (abs(mK[i][i-1]) > 1e-5) :
+            s = WilkinsonShift(mK[i-1][i-1],mK[i][i-1],mK[i][i])
+            smult = np.eye(i+1) * s
+            Q,R = QRDecompTridiag(np.subtract(mK[:i+1,:i+1],smult))
+            # Q,R = np.linalg.qr(np.subtract(mK[:i+1,:i+1],smult)) # QR built-in
+            mK[:i+1,:i+1] = np.add(R @ Q, smult)
+            if (i < n-1) :
+                mK[:i+1,i+1:] = Q.T @ mK[:i+1,i+1:]
+            iterQ = iterQ @ Q
+        paddedQ = np.eye(n)
+        for k in range(len(iterQ)) :
+            for j in range(len(iterQ)) :
+                paddedQ[k][j] = iterQ[k][j]
+        QTdotQ = QTdotQ @ paddedQ
     QTdotQ = HQ.T @ QTdotQ
     # Waktu akhir
     endTime = time.time()
@@ -477,7 +482,7 @@ def rayleigh_iteration(mtrx):
     return (eigValues, eigVectors.T)
 
 
-test = np.random.randint(0, 255, (150,150))
+test = np.random.randint(0, 255, (200,200))
 test = np.dot(test, test.T)
 print(test)
 # Test tridiagonalisasi
@@ -513,7 +518,7 @@ print(test)
 # QR
 QRVal, QRVec = QR_EigValue(test)
 # Rayleigh
-value, vector = rayleigh_iteration(test)
+# value, vector = rayleigh_iteration(test)
 # Built in
 BuiltinValue, BuiltinVector = np.linalg.eig(test)
 
@@ -521,9 +526,9 @@ eigSortIdxBuiltIn = BuiltinValue.argsort()[::-1] # argsort ngehasilin array yg i
 sorted_eigValBuiltIn = BuiltinValue[eigSortIdxBuiltIn]
 sorted_eigVectBuiltIn = BuiltinVector[:,eigSortIdxBuiltIn]
 
-eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
-sorted_eigValRayleigh = value[eigSortIdxRayleigh]
-sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
+# eigSortIdxRayleigh = value.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
+# sorted_eigValRayleigh = value[eigSortIdxRayleigh]
+# sorted_eigVectRayleigh = vector[:,eigSortIdxRayleigh]
 
 eigSortIdxQR = QRVal.argsort()[::-1] # argsort ngehasilin array yg isinya indeks elemen sesuai urutan.
 sorted_eigValQR = QRVal[eigSortIdxQR]
@@ -533,10 +538,10 @@ print("QR")
 print(sorted_eigValQR)
 print(sorted_eigVectQR)
 print()
-print("Rayleigh")
-print(sorted_eigValRayleigh)
-print(sorted_eigVectRayleigh)
-print()
+# print("Rayleigh")
+# print(sorted_eigValRayleigh)
+# print(sorted_eigVectRayleigh)
+# print()
 print("Built in")
 print(sorted_eigValBuiltIn)
 print(sorted_eigVectBuiltIn)

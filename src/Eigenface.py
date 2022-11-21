@@ -131,6 +131,15 @@ def QRDecompTridiag(mtrx) :
         Q = Q @ givens.T
     return Q,mK
 
+def WilkinsonShift(a,b,c) :
+    # Menghitung wilkinson shift untuk keperluan QR algorithm
+    # KAMUS LOKAL
+    # delta : float
+
+    # ALGORITMA
+    delta = (a-c)/2
+    return c-(np.sign(delta)*pow(b,2)/(abs(delta)+math.sqrt(pow(delta,2)+pow(b,2))))
+
 def QREigenSendiri(mtrx, iteration=5000) :
     # Menghitung nilai eigen dari matrik mtrx memakai QR decomposition. Prekondisi : mtrx adalah matriks persegi
     # Sumber : https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
@@ -141,19 +150,31 @@ def QREigenSendiri(mtrx, iteration=5000) :
     
     # ALGORITMA
     # Ditambahin cek waktu
+    startTime = time.time()
     n = len(mtrx)
+    # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
     H, HQ = Tridiagonalize(mtrx)
     mK = H
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
-    for i in range(iteration) :
-        s = mK[n-1][n-1]
-        smult = np.eye(n) * s
-        Q,R = QRDecompTridiag(np.subtract(mK,smult))
-        mK = np.add(R @ Q, smult)
-        QTdotQ = QTdotQ @ Q
-        if (isUpperTriangular(mK)) :
-            break
+    for i in range(n-1,0,-1) :
+        iterQ = np.eye(i+1)
+        while (abs(mK[i][i-1]) > 1e-5) :
+            s = WilkinsonShift(mK[i-1][i-1],mK[i][i-1],mK[i][i])
+            smult = np.eye(i+1) * s
+            Q,R = QRDecompTridiag(np.subtract(mK[:i+1,:i+1],smult))
+            mK[:i+1,:i+1] = np.add(R @ Q, smult)
+            if (i < n-1) :
+                mK[:i+1,i+1:] = Q.T @ mK[:i+1,i+1:]
+            iterQ = iterQ @ Q
+        paddedQ = np.eye(n)
+        for k in range(len(iterQ)) :
+            for j in range(len(iterQ)) :
+                paddedQ[k][j] = iterQ[k][j]
+        QTdotQ = QTdotQ @ paddedQ
     QTdotQ = HQ.T @ QTdotQ
+    # Waktu akhir
+    endTime = time.time()
+    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 def QREigenBuiltIn(mtrx, iteration=5000) :
@@ -165,21 +186,31 @@ def QREigenBuiltIn(mtrx, iteration=5000) :
     # i : integer
     
     # ALGORITMA
-    # Ditambahin cek waktu
+    startTime = time.time()
     n = len(mtrx)
     # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
     H, HQ = Tridiagonalize(mtrx)
     mK = H
     QTdotQ = np.eye(n) # Matriks identitas ukuran n
-    for i in range(iteration) :
-        s = mK[n-1][n-1]
-        smult = np.eye(n) * s
-        Q,R = np.linalg.qr(np.subtract(mK,smult)) # QR built-in
-        mK = np.add(R @ Q, smult)
-        QTdotQ = QTdotQ @ Q
-        if (isUpperTriangular(mK)) :
-            break
+    for i in range(n-1,0,-1) :
+        iterQ = np.eye(i+1)
+        while (abs(mK[i][i-1]) > 1e-5) :
+            s = WilkinsonShift(mK[i-1][i-1],mK[i][i-1],mK[i][i])
+            smult = np.eye(i+1) * s
+            Q,R = np.linalg.qr(np.subtract(mK[:i+1,:i+1],smult)) # QR built-in
+            mK[:i+1,:i+1] = np.add(R @ Q, smult)
+            if (i < n-1) :
+                mK[:i+1,i+1:] = Q.T @ mK[:i+1,i+1:]
+            iterQ = iterQ @ Q
+        paddedQ = np.eye(n)
+        for k in range(len(iterQ)) :
+            for j in range(len(iterQ)) :
+                paddedQ[k][j] = iterQ[k][j]
+        QTdotQ = QTdotQ @ paddedQ
     QTdotQ = HQ.T @ QTdotQ
+    # Waktu akhir
+    endTime = time.time()
+    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 def rayleigh_iteration(mtrx):
@@ -284,9 +315,9 @@ def EigenFace(imgVectorMatrix, method) :
     sort_eigenFace = eigenFace[eigSortIdx]
 
     largest_eigenFace = []
-    for i in range(len(sorted_eigVal)//10) :
+    for i in range(len(sorted_eigVal)) :
         if (i > 0) :
-            if (abs(sorted_eigVal[i]/sorted_eigVal[0]) > 1e-5) :
+            if (abs(sorted_eigVal[i]/sorted_eigVal[0]) > 1e-2) :
                 largest_eigenFace.append(sort_eigenFace[i])
             else :
                 break
@@ -342,17 +373,9 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     avgDistance /= len(coefTrain)
     print(avgDistance)
     print(min_dist)
-    if (min_dist > 1e4) :
+    if (min_dist > 2e4) :
         print("Wajah tidak ada di database")
     else :
         cv2.imwrite('../test/Gambar Uji/closestImg.jpg', initImage[idx])
     end = time.time()
     print("Waktu pengenalan wajah :", end-start)
-
-""" imgVectorMtrx, initImage = InputFace('./test/Dataset')
-mean, eigenFace, coefTrain = EigenFace(imgVectorMtrx, 'QRBuiltIn')
-decision = input()
-while (decision != 'EXIT') :
-    if (decision == 'R') :
-        RecognizeFace('./testImg.jpg', eigenFace, coefTrain, mean, initImage)
-    decision = input() """
