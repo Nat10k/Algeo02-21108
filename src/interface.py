@@ -8,6 +8,7 @@ from camRecord import main_cam
 import Eigenface
 import threading
 
+imageless_matrix = cv2.imread('images/imageless.PNG')
 sett = time.time()
 stop = 0
 hour = 0
@@ -20,40 +21,12 @@ window = tk.Tk()
 window.geometry("1100x600")
 window.configure(bg='#000000')
 window.attributes('-topmost')
-#window.wm_attributes('-transparentcolor', '#ffffff')
+
 window.resizable(False,False)
 window.title("Face Recognition")
 global label_result
-#window.wm_attributes('-transparentcolor', '#ffffff')
-#window.wm_attributes('-alpha',0.5)
-#background window
-#C = tk.Canvas(window, bg="blue", height=250, width=300)
-#window_bg_img = tk.PhotoImage(file='./gui/images/windowbackground.png')
-#window_bg_img_open = Image.open("./gui/images/windowbackground.png")
-#window_bg_img = tk.PhotoImage(file='./GUI/images/orangething.png')
-#window_bg_img_open = Image.open("./GUI/images/orangething.png")
-#resize_window_bg_img = window_bg_img_open.resize((1100, 600), Image.Resampling.LANCZOS)
-#window_background = ImageTk.PhotoImage(resize_window_bg_img)
-#window_bg_label = tk.Label(window, image=window_background)
-#window_bg_label.image = window_background
-
-#window_bg_label.place(x=0, y=0)
-#window_bg_label.pack()
-
-
-
-# placement Grid, Pack, Place
-#functions
-#def dataset():
-    #popup.config = tk.Label(text="Test")
-
-#def closestresult():
-#def main_webcams(): 
-   # tes = True
-   # tes = main_webcam()
-   # while (tes):
-    #    reprint(1)
 stoploop = 0
+
 def stopwebcam():
     global stoploop#, #threadReupdate, threadCapture
     stoploop = 1
@@ -69,10 +42,18 @@ def main_webcams():
     cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
 
     def capture():
+        global imageless_matrix, label_result_dir
         if stoploop == 0:
             print("Screenshot taken")
             start = time.time()
-            Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
+            x = Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
+            if not x:
+                label_result_dir.configure(text='None')
+                label_result_dir.place(relx=0.125, rely=0.76)
+                cv2.imwrite('../test/Gambar Uji/closestImg.jpg', imageless_matrix)
+            else:
+                label_result_dir.configure(text='closestImg.jpg')
+                label_result_dir.place(relx=0.125, rely=0.76)
             end = time.time()
             reupdateResult(start,end)
             time.sleep(10)
@@ -95,9 +76,6 @@ def main_webcams():
         resimg = Image.open(clsImg)
         res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
         img_res = ImageTk.PhotoImage(res)
-        
-        label_result_dir.configure(text='closestImg.jpg')
-        label_result_dir.place(relx=0.125, rely=0.76)
         label_crbg.configure(image=img_res)
         label_crbg.image = img_res
         label_crbg.place(relx=0.63, rely=0.35)
@@ -113,7 +91,7 @@ def main_webcams():
             resize = cv2.resize(frame,(256,256))  # resize jadi 256 x 256
             cv2.imwrite(filename,resize)
             #Chosen file label
-            image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
+            image_info.config(text=filename, font=("Arial", 7), wraplength=135, justify='left')
             image_info.place(relx = 0.173, rely = 0.575)
             #Open Image
             theimg = Image.open(filename)
@@ -131,9 +109,6 @@ def main_webcams():
         else:
             cam.release()
             return
-    # Set up schedule before loop
-    # schedule.every(5).seconds.do(capture)
-    # schedule.every(5).seconds.do(reupdate(image_info)) """
 
     # Proses dataset 
     imgVectorMtrx, initImage = Eigenface.InputFace(file)
@@ -143,62 +118,19 @@ def main_webcams():
     threadReupdate.start()
     threadCapture.start()
     # Tutup cam
-    """ k = cv2.waitKey(100)  # 1/10 sec delay; no need for separate sleep
-
-    if k % 256 == 27 or k == ord('q'):  # Command quit : q
-        print("Closing the app")
-        else :
-            asyncio.run(capture())
-
-    cam.release()  # Tutup cam
-    cv2.destroyAllWindows() # Hapus memmory cam agar tidak membebani laptop """
-    
-def reprint(val):
-    if val == 1:
-        #Chosen file label'
-        print("Gotten here!")
-        label_chosen = tk.Label(window, text='image_webcam.jpg', font=("Arial", 8),fg='#525252', bg='#ffffff', wraplength=135, justify='left')
-        label_chosen.place(relx = 0.173, rely = 0.575)
-        #Open Image
-        theimg = Image.open('image_webcam.jpg')
-        #Resize Image
-        resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
-        #Framing Image
-        img_input = ImageTk.PhotoImage(resize_img)
-        #Creating image
-        label_input = tk.Label(window, image = img_input)
-        label_input.image = img_input
-        #Display image
-        label_input.place(relx = 0.33, rely = 0.35)
-        reprints = 0
-        
+            
 def camerafunc():
     main_cam()
-#def starttime(label_result, start):
-    #global stop, hour, minute, second, milisec
-    #starts = time.time()
-    #hour = start("%H")
-    #minute = start("%M")
-    #second = start("%S")
-    #now = starts-start
-    #hour = int(now//3600)
-    #minute = int(now//60)
-    #second = int(now%60)
-    #milisec = float(now%1)*1000000
-    #if stop == 0:
-       #label_result.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
-       # label_result.after(1, starttime(label_result, start))
-        #label_result.place(relx=0.435, rely= 0.836)
 
 def insimg(image_info):
-    global hour, minute, second, milisec, stop
+    global hour, minute, second, milisec, stop, label_result_dir
     stop = 0
     #Insert image
     filename = filedialog.askopenfilename(filetypes=[("Image Files", '.png .jpeg .jpg')])
     print('Selected:', filename)
     
     #Chosen file label
-    image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
+    image_info.config(text=filename, font=("Arial", 7), wraplength=135, justify='left')
     image_info.place(relx = 0.173, rely = 0.575)
     #Open Image
     theimg = Image.open(filename)
@@ -212,7 +144,14 @@ def insimg(image_info):
     #Display image
     label.place(relx = 0.33, rely = 0.35)
     mulai = time.time()
-    Eigenface.RecognizeFace(filename, eigenface, koefTrain, mean, initImage)
+    x = Eigenface.RecognizeFace(filename, eigenface, koefTrain, mean, initImage)
+    if not x:
+        label_result_dir.configure(text='None')
+        label_result_dir.place(relx=0.125, rely=0.76)
+        cv2.imwrite('../test/Gambar Uji/closestImg.jpg', imageless_matrix)
+    else:
+        label_result_dir.configure(text='closestImg.jpg')
+        label_result_dir.place(relx=0.125, rely=0.76)
     selesai = time.time()
     now = selesai-mulai
     hour = int(now//3600)
@@ -228,25 +167,22 @@ def insimg(image_info):
     resimg = Image.open(clsImg)
     res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
     img_res = ImageTk.PhotoImage(res)
-    
-    label_result_dir.configure(text='closestImg.jpg')
-    label_result_dir.place(relx=0.125, rely=0.76)
     label_result = tk.Label(window, image=img_res)
     label_result.image = img_res
     label_result.place(relx = 0.63, rely= 0.35)
 
-def dataimg(label_1):
+def dataimg():
     global eigenface
     global koefTrain
     global mean
     global initImage
     global imgVectorMatrix
     global hour, minute, second, milisec, stop
-    global file
+    global file, label_load_time
     file = filedialog.askdirectory(parent=window, title='Open 1st file')
     print('Dataset: ', file)
-    label_1 = tk.Label(window, text= file, wraplength=135, font=("Arial", 8),fg='#525252', bg='#ffffff', justify='left')
-    label_1.place(relx = 0.173, rely = 0.400)
+    dataset_info.configure(text=file, font=("Arial", 7), wraplength=135, justify='left')
+    dataset_info.place(relx = 0.173, rely = 0.400)
     mulai = time.time()
     imgVectorMatrix, initImage = Eigenface.InputFace(file)
     mean, eigenface, koefTrain = Eigenface.EigenFace(imgVectorMatrix, 'QRBuiltIn')
@@ -261,13 +197,6 @@ def dataimg(label_1):
     else:
         label_load_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
     label_load_time.place(relx=0.435, rely= 0.88)
-    #time
-    #start = time.time()
-    #minute = start//60
-    #second = start%60
-    #label_execution_time = tk.Label(text='f{minute}:{start}');
-    #stop = time.time()
-
 
 #main
 transparent = tk.PhotoImage(file='./images/transparent.png')
@@ -291,11 +220,6 @@ orangebg_canvas.place(relx=0, rely=0.2)
 
 left_canvas = tk.Canvas(window, width=235, height=400, borderwidth=5, border=5, highlightthickness =4,highlightbackground="black", bg="#ffffff")
 left_canvas.place(relx=0.075, rely = 0.27)
-#left_bg_img = Image.open("images/softcolorbg.png")
-#leftbgimg = left_bg_img.resize((250, 400))
-#lbi = ImageTk.PhotoImage(leftbgimg)
-#left_canvas.create_image(125, 200, image=lbi)
-
 
 insds_canvas = tk.Canvas(window, width=235, height=20, borderwidth=5, border=5, bg="#FFAA33", highlightbackground="black", highlightthickness=4)
 insds_canvas.place(relx=0.075, rely=0.325)
@@ -304,7 +228,7 @@ label_dataset.place(relx=0.1, rely=0.331)
 #choose file button - Insert Your Dataset
 #img_b = tk.PhotoImage(file="./gui/images/choose_file_button.PNG")
 img_b = tk.PhotoImage(file="./images/choose_file_button.PNG")
-dataset_button = tk.Button(window, command= lambda:dataimg(dataset_info), image=img_b, fg="white", pady=20, padx=3, borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
+dataset_button = tk.Button(window, command= dataimg, image=img_b, fg="white", pady=20, padx=3, borderwidth=0, border=0, highlightthickness=0,bg='#ffffff', activebackground='#ffffff')
 dataset_button.place(relx = 0.095, rely = 0.4)
 
 #choosen file - Insert Your Dataset
@@ -318,7 +242,7 @@ label_insimage = tk.Label(window, text= "Insert Your Image", font=("Papyrus", 11
 label_insimage.place(relx=0.1, rely=0.516)
 
 #choose file button - Insert Your Image
-img_button = tk.Button(window, command= lambda:insimg(image_info), image=img_b, fg="blue",pady = 20, padx = 3, borderwidth=0, bg='#ffffff', activebackground='#ffffff')
+img_button = tk.Button(window, command=insimg, image=img_b, fg="blue",pady = 20, padx = 3, borderwidth=0, bg='#ffffff', activebackground='#ffffff')
 img_button.place(relx = 0.095, rely = 0.58)
 
 #choosen file - Insert Your Image
