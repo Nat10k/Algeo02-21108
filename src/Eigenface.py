@@ -240,8 +240,15 @@ def InputFace(dir) :
     # ALGORITMA
     initImage = np.array( [np.array(cv2.imread(image)) for image in glob.glob(f'{dir}/*')])
     trainingImage = np.array( [np.array(cv2.imread(image,0)) for image in glob.glob(f'{dir}/*')])
+    resizedTrainingImage = []
+    for i in range(len(trainingImage)) :
+        try : 
+            resizedTrainingImage.append(cv2.resize(trainingImage[i],(256,256)))
+        except :
+            print("Tidak bisa resize")
+            break
     imgVectorMatrix = []
-    for images in trainingImage :
+    for images in resizedTrainingImage :
         # List penampung vektor gambar
         imgPixelList = images.flatten()     
         imgVectorMatrix.append(imgPixelList)
@@ -332,7 +339,8 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
 
     # ALGORITMA
     # Baca gambar uji
-    testImg = cv2.imread(dir, 0).flatten()
+    testImg = cv2.imread(dir, 0)
+    testImg = cv2.resize(testImg,(256,256)).flatten()
     testImg -= mean
 
     # Projeksi ke eigenface
@@ -354,7 +362,7 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
                 min_dist = distance
                 idx = i
     print(min_dist)
-    if(min_dist > 5e4) :
+    if(min_dist > 2e4) :
         print("Wajah tidak ada di database")
         return False
     else :
