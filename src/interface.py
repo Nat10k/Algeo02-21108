@@ -5,7 +5,6 @@ from PIL import ImageTk, Image
 import time
 import cv2
 from camRecord import main_cam
-from webcam import main_webcam
 import Eigenface
 import threading
 
