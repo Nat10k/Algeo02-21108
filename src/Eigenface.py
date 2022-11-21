@@ -150,7 +150,6 @@ def QREigenSendiri(mtrx, iteration=5000) :
     
     # ALGORITMA
     # Ditambahin cek waktu
-    startTime = time.time()
     n = len(mtrx)
     # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
     H, HQ = Tridiagonalize(mtrx)
@@ -172,9 +171,6 @@ def QREigenSendiri(mtrx, iteration=5000) :
                 paddedQ[k][j] = iterQ[k][j]
         QTdotQ = QTdotQ @ paddedQ
     QTdotQ = HQ.T @ QTdotQ
-    # Waktu akhir
-    endTime = time.time()
-    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 def QREigenBuiltIn(mtrx, iteration=5000) :
@@ -186,7 +182,6 @@ def QREigenBuiltIn(mtrx, iteration=5000) :
     # i : integer
     
     # ALGORITMA
-    startTime = time.time()
     n = len(mtrx)
     # H, HQ = scipy.linalg.hessenberg(mtrx, calc_q=True)
     H, HQ = Tridiagonalize(mtrx)
@@ -208,9 +203,6 @@ def QREigenBuiltIn(mtrx, iteration=5000) :
                 paddedQ[k][j] = iterQ[k][j]
         QTdotQ = QTdotQ @ paddedQ
     QTdotQ = HQ.T @ QTdotQ
-    # Waktu akhir
-    endTime = time.time()
-    print("Waktu eksekusi QR : ", endTime-startTime)
     return np.diag(mK), QTdotQ
 
 def rayleigh_iteration(mtrx):
@@ -284,8 +276,6 @@ def EigenFace(imgVectorMatrix, method) :
         print("Tidak ada gambar di dataset")
         return
     
-    # Mulai perhitungan waktu eksekusi
-    start = time.time()
     # Selisih training image dengan nilai tengah (norm face)
     mean = MeanFace(imgVectorMatrix)
     for i in range(len(imgVectorMatrix)) :
@@ -315,9 +305,13 @@ def EigenFace(imgVectorMatrix, method) :
     sort_eigenFace = eigenFace[eigSortIdx]
 
     largest_eigenFace = []
-    for i in range(len(sorted_eigVal)) :
-        if (i > 0) :
-            if (abs(sorted_eigVal[i]/sorted_eigVal[0]) > 1e-2) :
+    if (len(sorted_eigVal) > 10) :
+        startExtract = 3
+    else :
+        startExtract = 0
+    for i in range(startExtract,len(sorted_eigVal)) :
+        if (i > startExtract) :
+            if (abs(sorted_eigVal[i]/sorted_eigVal[startExtract]) > 1e-2) :
                 largest_eigenFace.append(sort_eigenFace[i])
             else :
                 break
@@ -332,9 +326,6 @@ def EigenFace(imgVectorMatrix, method) :
         for j in range(len(largest_eigenFace)) :
             coefI.append(np.dot(imgVectorMatrix[i],largest_eigenFace[j]))
         coefTrain.append(coefI)
-    end = time.time()
-    execTime = end-start
-    print("Waktu eksekusi :", execTime)
     return mean, largest_eigenFace, coefTrain
 
 def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
@@ -342,7 +333,6 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     # KAMUS LOKAL
 
     # ALGORITMA
-    start = time.time()
     # Baca gambar uji
     testImg = cv2.imread(dir, 0).flatten()
     testImg -= mean
@@ -373,9 +363,7 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     avgDistance /= len(coefTrain)
     print(avgDistance)
     print(min_dist)
-    if (min_dist > 2e4) :
+    if(min_dist > 2e4) :
         print("Wajah tidak ada di database")
     else :
         cv2.imwrite('../test/Gambar Uji/closestImg.jpg', initImage[idx])
-    end = time.time()
-    print("Waktu pengenalan wajah :", end-start)
