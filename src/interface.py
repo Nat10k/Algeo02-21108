@@ -7,6 +7,7 @@ import cv2
 from camRecord import main_cam
 from webcam import main_webcam
 import Eigenface
+import threading
 
 sett = time.time()
 stop = 0
@@ -55,30 +56,67 @@ global label_result
     #    reprint(1)
 
 def main_webcams():
-    """ main_webcam()
-    reupdate(image_info) """
-    def photo_image(img):
-        h, w = img.shape[:2]
-        data = f'P6 {w} {h} 255 '.encode() + img[..., ::-1].tobytes()
-        return PhotoImage(width=w, height=h, data=data, format='PPM')
     
     cam = cv2.VideoCapture(0)  # Index webcam, kebetulan main ku 1
 
     def capture():
+        print("Screenshot taken")
+        start = time.time()
+        Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
+        end = time.time()
+        reupdateResult(start,end)
+        time.sleep(10)
+        capture()
+    
+    def reupdateResult(mulai,selesai) :
+        now = selesai-mulai
+        hour = int(now//3600)
+        minute = int(now//60)
+        second = int(now%60)
+        milisec = float(now%1)*100000
+        if (milisec/100000 < 0.1):
+            label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.0{milisec:.0f}")
+        else:
+            label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
+        label_execution_time.place(relx=0.435, rely= 0.836)
+        clsImg = '../test/Gambar Uji/closestImg.jpg'
+        resimg = Image.open(clsImg)
+        res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
+        img_res = ImageTk.PhotoImage(res)
+        
+        label_result_dir.configure(text='closestImg.jpg')
+        label_result_dir.place(relx=0.125, rely=0.76)
+        label_crbg.configure(image=img_res)
+        label_crbg.image = img_res
+        label_crbg.place(relx=0.63, rely=0.35)
+
+    def reupdate():
+        global hour, minute, second, milisec, stop
+        stop = 0
+        
+        filename = 'image_webcam.jpg'
         ret, frame = cam.read()
         if not ret:
             print("Failed to take an image")
             return
-        
         resize = cv2.resize(frame,(256,256))  # resize jadi 256 x 256
-        img_name = "image_webcam.jpg"
-        cv2.imwrite(img_name, resize)
-        # await asyncio.sleep(5)
-        reupdate('image_webcam.jpg',)
-        print("Screenshot taken")
-        Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
-        window.after(15,capture)
-        
+        cv2.imwrite(filename,resize)
+        #Chosen file label
+        image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
+        image_info.place(relx = 0.173, rely = 0.575)
+        #Open Image
+        theimg = Image.open(filename)
+        #Resize Image
+        resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
+        #Framing Image
+        img_input = ImageTk.PhotoImage(resize_img)
+        #Creating image
+        label = tk.Label(window, image = img_input)
+        label.image = img_input
+        #Display image
+        label.place(relx = 0.33, rely = 0.35)
+        time.sleep(0.1)
+        reupdate()
     # Set up schedule before loop
     # schedule.every(5).seconds.do(capture)
     # schedule.every(5).seconds.do(reupdate(image_info)) """
@@ -86,12 +124,10 @@ def main_webcams():
     # Proses dataset 
     imgVectorMtrx, initImage = Eigenface.InputFace('../test/Face_Cam_Data')
     mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
-
-    # cv2.imwrite('image_webcam.jpg',resize)
-    capture()
-    # reupdate(image_info)
-    # asyncio.run(capture())
-    # schedule.run_pending()
+    threadReupdate = threading.Thread(target=reupdate)
+    threadCapture = threading.Thread(target=capture)
+    threadReupdate.start()
+    threadCapture.start()
 
     """ k = cv2.waitKey(100)  # 1/10 sec delay; no need for separate sleep
 
@@ -184,48 +220,6 @@ def insimg(image_info):
     label_result = tk.Label(window, image=img_res)
     label_result.image = img_res
     label_result.place(relx = 0.63, rely= 0.35)
-    
-def reupdate(filename):
-    global hour, minute, second, milisec, stop
-    stop = 0
-    
-    #Chosen file label
-    image_info.config(text=filename, font=("Arial", 8), wraplength=135, justify='left')
-    image_info.place(relx = 0.173, rely = 0.575)
-    #Open Image
-    theimg = Image.open(filename)
-    #Resize Image
-    resize_img = theimg.resize((256, 256), Image.Resampling.LANCZOS)
-    #Framing Image
-    img_input = ImageTk.PhotoImage(resize_img)
-    #Creating image
-    label = tk.Label(window, image = img_input)
-    label.image = img_input
-    #Display image
-    label.place(relx = 0.33, rely = 0.35)
-    mulai = time.time()
-    Eigenface.RecognizeFace(filename, eigenface, koefTrain, mean, initImage)
-    selesai = time.time()
-    now = selesai-mulai
-    hour = int(now//3600)
-    minute = int(now//60)
-    second = int(now%60)
-    milisec = float(now%1)*100000
-    if (milisec/100000 < 0.1):
-        label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.0{milisec:.0f}")
-    else:
-        label_execution_time.config(text=f"{hour:02d}:{minute:02d}:{second:02d}.{milisec:.0f}")
-    label_execution_time.place(relx=0.435, rely= 0.836)
-    clsImg = '../test/Gambar Uji/closestImg.jpg'
-    resimg = Image.open(clsImg)
-    res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
-    img_res = ImageTk.PhotoImage(res)
-    
-    label_result_dir.configure(text='closestImg.jpg')
-    label_result_dir.place(relx=0.125, rely=0.76)
-    label_crbg.configure(image=img_res)
-    label_crbg.image = img_res
-    label_crbg.place(relx=0.63, rely=0.35)
 
 def dataimg(label_1):
     global eigenface
