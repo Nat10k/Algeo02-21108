@@ -300,7 +300,6 @@ def EigenFace(imgVectorMatrix, method) :
         else :
             largest_eigenFace.append(sort_eigenFace[i])
     largest_eigenFace = np.array(largest_eigenFace, dtype=np.float64)
-
     # Membuat vektor koefisien tiap gambar terhadap eigenFace
     coefTrain = []
     for i in range(len(imgVectorMatrix)) :
@@ -327,19 +326,21 @@ def RecognizeFace(dir, eigenFace, coefTrain, mean, initImage) :
     idx = 0
 
     # Hitung kedekatan wajah dengan dataset berdasarkan Euclidean Distance
+    averageDist = 0
     for i in range (len(coefTrain)) :
         distance = 0
         for j in range(len(coefTrain[i])) :
             distance += math.pow(coefTrain[i][j] - coefTest[j],2)
         distance = math.sqrt(distance)
+        averageDist += distance
         if (i == 0) :
             min_dist = distance
         else :
             if (distance < min_dist) :
                 min_dist = distance
                 idx = i
-    print(min_dist)
-    if(min_dist > 2e4) :
+    averageDist /= len(coefTrain)
+    if(min_dist > averageDist/2) :
         print("Wajah tidak ada di database")
         return False
     else :
