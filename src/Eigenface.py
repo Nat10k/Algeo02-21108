@@ -276,7 +276,7 @@ def EigenFace(imgVectorMatrix, method) :
         else :
             if (method == 'Rayleigh') :
                 eigValue, eigVector = rayleigh_iteration(covar)
-    
+
     # Membuat eigenface dan mengurutkannya
     eigenFace = np.transpose(np.dot(mImgTrans, eigVector))
     for i in range(len(eigenFace)) : # Normalisasi eigenface supaya hasil perhitungan jarak tidak terlalu besar
@@ -287,7 +287,7 @@ def EigenFace(imgVectorMatrix, method) :
     sort_eigenFace = eigenFace[eigSortIdx]
 
     largest_eigenFace = []
-    if (len(sorted_eigVal) > 10) :
+    if (len(sorted_eigVal) > 10) : # 3 Eigenface pertama dilewat untuk menghindari outlier dari lighting
         startExtract = 3
     else :
         startExtract = 0
