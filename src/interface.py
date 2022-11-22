@@ -34,6 +34,11 @@ def stopwebcam():
 
 def main_webcams():
     global new_button, stoploop, cam, threadReupdate, threadCapture, file
+    global eigenface
+    global koefTrain
+    global mean
+    global initImage
+    global imgVectorMatrix
     stoploop = 0
     new_button = tk.Button(window, text="Stop", command=stopwebcam, font=("Courier New", 12), fg = 'orange', bg = 'black', highlightthickness=3, highlightbackground='black')
     new_button.place(relx= 0.51, rely= 0.285)
@@ -44,7 +49,7 @@ def main_webcams():
         if stoploop == 0:
             print("Screenshot taken")
             start = time.time()
-            x = Eigenface.RecognizeFace('image_webcam.jpg', eigenFace, coefTrain, mean, initImage)
+            x = Eigenface.RecognizeFace('image_webcam.jpg', eigenface, koefTrain, mean, initImage)
             if not x:
                 label_result_dir.configure(text='None')
                 label_result_dir.place(relx=0.125, rely=0.76)
@@ -60,6 +65,7 @@ def main_webcams():
             return
     
     def reupdateResult(mulai,selesai) :
+        global label_result
         now = selesai-mulai
         hour = int(now//3600)
         minute = int(now//60)
@@ -74,9 +80,9 @@ def main_webcams():
         resimg = Image.open(clsImg)
         res = resimg.resize((256, 256), Image.Resampling.LANCZOS)
         img_res = ImageTk.PhotoImage(res)
-        label_crbg.configure(image=img_res)
-        label_crbg.image = img_res
-        label_crbg.place(relx=0.63, rely=0.35)
+        label_result = tk.Label(window, image=img_res)
+        label_result.image = img_res
+        label_result.place(relx = 0.63, rely= 0.35)
 
     def reupdate():
         global hour, minute, second, milisec, stop
@@ -109,19 +115,16 @@ def main_webcams():
             return
 
     # Proses dataset 
-    imgVectorMtrx, initImage = Eigenface.InputFace(file)
-    mean, eigenFace, coefTrain = Eigenface.EigenFace(imgVectorMtrx, 'QRBuiltIn')
     threadReupdate = threading.Thread(target=reupdate)
     threadCapture = threading.Thread(target=capture)
     threadReupdate.start()
     threadCapture.start()
-    # Tutup cam
             
 def camerafunc():
     main_cam()
 
 def insimg():
-    global hour, minute, second, milisec, stop, label_result_dir
+    global hour, minute, second, milisec, stop, label_result_dir, imageless_matrix, label_result
     stop = 0
     #Insert image
     filename = filedialog.askopenfilename(filetypes=[("Image Files", '.png .jpeg .jpg')])
