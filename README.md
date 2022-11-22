@@ -51,10 +51,12 @@ Pada Tugas Besar kali ini, program yang kami buat dapat digunakan untuk :
 * Tkinter<br />
 * Pillow<br />
 * OpenCV<br />
-* Splitfolders<br />
 * Glob<br />
-* Scipy<br />
 * Schedule<br />
+* Time<br />
+* Threading<br />
+* Numpy<br />
+* Math<br />
 
 ## Cara Menjalankan Program
 
